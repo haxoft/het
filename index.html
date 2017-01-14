@@ -1,39 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
- <head>
-     <link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/6.0.4/css/aui.min.css" media="all">
-     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-     <script src="//aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui.min.js"></script>
- </head>
- <body>
-     <section id="content" class="ac-content">
-         <div class="aui-page-header">
-             <div class="aui-page-header-main">
-                 <h1>Java is dead,uncool, and SO 90's.</h1>
-             </div>
-         </div>
-     </section>
+<head>
+    <link rel="stylesheet" href="http://aui-cdn.atlassian.com/aui-adg/6.0.4/css/aui.min.css" media="all">
+    <link rel="stylesheet" href="http://aui-cdn.atlassian.com/aui-adg/6.0.4/css/aui-experimental.min.css" media="all">
+    <link rel="stylesheet" href="main.css" media="all">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="http://aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui.min.js"></script>
+    <script src="http://aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui-experimental.min.js"></script>
+    <script src="http://aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui-datepicker.min.js"></script>
+    <script src="http://aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui-soy.min.js"></script>
+</head>
+<body>
+    <section id="content">
+        <div class="aui-sidebar">
+            <div class="aui-sidebar-wrapper">
+                <div class="aui-sidebar-body">
+                    <nav class="aui-navgroup aui-navgroup-vertical">
+                        <div class="aui-navgroup-inner">
+                            <div class="aui-sidebar-group aui-sidebar-group-actions">
+                                <div class="aui-nav-heading" title="Actions">
+                                    <strong>Actions</strong>
+                                </div>
+                                <ul class="aui-nav" title="Page actions">
+                                    <li>
+                                        <a class="aui-nav-item" href="#" title="EU_LEDS_2014">EU_LEDS_2014</a>
+                                    </li>
+                                    <li>
+                                        <a class="aui-nav-item" href="#" title="EU_IOT_2010">EU_IOT_2010</a>
+                                    </li>
+                                    <li>
+                                        <a class="aui-nav-item" href="#" title="EU_H2020_2012">EU_H2020_2012</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+
+                <div class="aui-sidebar-footer">
+                    <a class="aui-button aui-button-subtle aui-sidebar-toggle aui-sidebar-footer-tipsy" title="Collapse sidebar ( [ )">
+                        <span class="aui-icon aui-icon-small"></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="aui-page-panel">
+            <div class="aui-page-panel-inner">
+                <section class="aui-page-panel-content">
+                    <div class="aui-page-header">
+                        <div class="aui-page-header-main">
+                            <h1>Java is dead, uncool, and SO 90's.</h1>
+                      </div>
+                    </div>
+                    <div class="aui-tabs horizontal-tabs">
+                        <ul class="tabs-menu">
+                            <li class="menu-item active-tab">
+                                <a href="#tabs-example-first">EU_LEDS_2014 - Documents</a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="#tabs-example-second">EU_LEDS_2014 - Requirements</a>
+                            </li>
+                        </ul>
+                        <div class="tabs-pane active-pane" id="tabs-example-first">
+                            <form class="aui">
+                                <div class="field-group">
+                                    <label for="section_1_name" class="pt-0"><h3>Section</h3></label>
+                                    <input class="text" type="text" id="section_1_name" name="section_1_name" title="Section Name">
+                                </div>
+                            </form>
+                            <table id="project-config-versions-table"></table>
+                            <button class="aui-button">
+                                <span class="aui-icon aui-icon-small aui-iconfont-add"></span>
+                                Add Section
+                            </button>
+                        </div>
+                        <div class="tabs-pane" id="tabs-example-second">
+                            <form class="aui">
+                                <div class="field-group">
+                                    <label for="topic">Topic</label>
+                                    <input class="text long-field" type="text" id="topic" name="topic" title="Topic">
+                                </div>
+                                <div class="field-group">
+                                    <label for="deadline">Deadline</label>
+                                    <input class="text long-field" type="text" id="deadline" name="deadline" title="Deadline">
+                                </div>
+                                <div class="field-group">
+                                    <label for="project_context">Project context</label>
+                                    <select class="multi-select long-field" size="4" multiple="multiple" id="project_context" name="project_context">
+                                        <option>Horizon 2020</option>
+                                        <option>European Commission</option>
+                                        <option>Industrial Leadership</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label for="length">Length</label>
+                                    <input class="text long-field" type="text" id="length" name="length" title="Length">
+                                </div>
+                                <div class="field-group">
+                                    <label for="participation_limitations">Participation Limitations</label>
+                                    <select class="multi-select long-field" size="4" multiple="multiple" id="participation_limitations" name="participation_limitations">
+                                        <option>The participation of female members must be at least 30%</option>
+                                        <option>Consortium institutions must originate from 3 different EU countries</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label for="scope">Scope</label>
+                                    <textarea rows="6" class="textarea long-field" name="scope" id="scope">The above describes three intervowen aspects of a challenge to segment the (SME-)Clients of public innovation support in order to achieve a higher social return from the investments into ...</textarea>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
 
      <script id="connect-loader" data-options="sizeToParent:true;">
-         (function() {
-             var getUrlParam = function (param) {
-                 var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
-                 return decodeURIComponent(codedParam);
-             };
+        (function() {
+            /*var getUrlParam = function (param) {
+                var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+                return decodeURIComponent(codedParam);
+            };
 
-             var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
-             var options = document.getElementById('connect-loader').getAttribute('data-options');
+            var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+            var options = document.getElementById('connect-loader').getAttribute('data-options');
 
-             var script = document.createElement("script");
-             script.src = baseUrl + '/atlassian-connect/all.js';
+            var script = document.createElement("script");
+            script.src = baseUrl + '/atlassian-connect/all.js';
 
-             if(options) {
-                 script.setAttribute('data-options', options);
-             }
+            if(options) {
+                script.setAttribute('data-options', options);
+            }
 
-             document.getElementsByTagName("head")[0].appendChild(script);
-         })();
-     </script>
-
- </body>
+            document.getElementsByTagName("head")[0].appendChild(script);*/
+            
+            initDocumentTable();
+        })();
+        
+        function initDocumentTable() {
+            new AJS.RestfulTable({
+                autoFocus: true,
+                el: jQuery("#project-config-versions-table"),
+                resources: {
+                    all: "rest/project/HSP/versions?expand=operations",
+                    self: "rest/version"
+                },
+                columns: [
+                    {
+                        id: "name",
+                        header: "Name",
+                        allowEdit: true
+                    },
+                    {
+                        id: "type",
+                        header: "Type",
+                        allowEdit: false
+                    },
+                    {
+                        id: "size",
+                        header: "Size",
+                        allowEdit: false
+                    },
+                    {
+                        id: "category",
+                        header: "Category",
+                        allowEdit: true
+                    }
+                ],
+                allowCreate: true,
+                allowEdit: true,
+                allowReorder: true,
+                allowDelete: true,
+                createPosition: "bottom",
+                deleteConfirmation: true
+            });
+        }
+    </script>
+</body>
 </html>
