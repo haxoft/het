@@ -49,7 +49,7 @@
         <div class="aui-page-panel">
             <div class="aui-page-panel-inner">
                 <section class="">
-                    <nav class="aui-header aui-dropdown2-trigger-group" role="navigation" data-aui-responsive="true">
+                    <nav class="aui-header aui-dropdown2-trigger-group mb-10" role="navigation" data-aui-responsive="true">
                         <div class="aui-header-primary">
                             <ul class="aui-nav __skate" style="width: auto;">
                                 <li>
@@ -65,39 +65,26 @@
                                         aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom
                                         aui-alignment-target-attached-left" resolved="" aria-hidden="true" data-aui-alignment="bottom auto" data-aui-alignment-static="true"
                                         style="z-index: auto; top: 0px; left: 0px; position: absolute; transform: translateX(341px) translateY(690px) translateZ(0px);">
-                                        <ul class="aui-list-truncate">
-                                            <li><a href="http://example.com/" tabindex="-1">Project</a></li>
-                                            <li><a href="http://example.com/" tabindex="-1">Folder</a></li>
+                                        <ul class="aui-list-truncate cursor-pointer">
+                                            <li><a id="new_project_button" tabindex="-1">Project</a></li>
+                                            <li><a id="new_folder_button" tabindex="-1">Folder</a></li>
                                         </ul>
                                     </div>
                                 </li>
                                 <li>
-                                    <button class="aui-button aui-button-primary mt-5 mb-5 auto-height">
-                                    <span class="font-size-150 glyphicon glyphicon-import"></span><br/>
+                                    <button id="import_button" class="aui-button aui-button-primary mt-5 mb-5 auto-height">
+                                        <span class="font-size-150 glyphicon glyphicon-import"></span><br/>
                                         Import
                                     </button>
                                 </li>
                                 <li>
-                                    <button class="aui-button aui-button-primary aui-dropdown2-trigger aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left
-                                        aui-alignment-out-of-bounds aui-alignment-out-of-bounds-bottom aui-alignment-element-attached-top aui-alignment-element-attached-left
-                                        aui-alignment-target-attached-bottom aui-alignment-target-attached-left mt-5 mb-5 auto-height" aria-haspopup="true" resolved=""
-                                        aria-controls="export_button_more" aria-expanded="false">
-                                        <span class="font-size-150 glyphicon glyphicon-export"></span><br/>
+                                    <button id="export_button" class="aui-button aui-button-primary mt-5 mb-5 auto-height">
+                                        <span class="font-size-150 glyphicon glyphicon-import"></span><br/>
                                         Export
                                     </button>
-                                    <div id="export_button_more" class="aui-dropdown2 aui-style-default aui-layer aui-alignment-element aui-alignment-side-bottom
-                                        aui-alignment-snap-left aui-alignment-abutted aui-alignment-abutted-left aui-alignment-out-of-bounds aui-alignment-out-of-bounds-bottom
-                                        aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom
-                                        aui-alignment-target-attached-left" resolved="" aria-hidden="true" data-aui-alignment="bottom auto" data-aui-alignment-static="true"
-                                        style="z-index: auto; top: 0px; left: 0px; position: absolute; transform: translateX(341px) translateY(690px) translateZ(0px);">
-                                        <ul class="aui-list-truncate">
-                                            <li><a href="http://example.com/" tabindex="-1">Machine Readable</a></li>
-                                            <li><a href="http://example.com/" tabindex="-1">Human Readable</a></li>
-                                        </ul>
-                                    </div>
                                 </li>
                                 <li>
-                                    <button class="aui-button aui-button-primary mt-5 mb-5 auto-height">
+                                    <button id="run_analysis_button" class="aui-button aui-button-primary mt-5 mb-5 auto-height">
                                         <span class="font-size-150 glyphicon glyphicon-triangle-right"></span><br/>
                                         Run Analysis
                                     </button>
@@ -115,13 +102,15 @@
                             </li>
                         </ul>
                         <div class="tabs-pane active-pane" id="tabs-example-first">
-                            <form class="aui">
-                                <div class="field-group">
-                                    <label for="section_1_name" class="pt-0"><h3>Section</h3></label>
-                                    <input class="text" type="text" id="section_1_name" name="section_1_name" title="Section Name">
-                                </div>
-                            </form>
-                            <table id="project-config-versions-table"></table>
+                            <div class="mb-10">
+                                <form class="aui pt-10 mb-neg-20">
+                                    <div class="field-group">
+                                        <label for="section_1_name" class="pt-0"><h3>Section</h3></label>
+                                        <input class="text" type="text" id="section_1_name" name="section_1_name" title="Section Name">
+                                    </div>
+                                </form>
+                                <table id="project-config-versions-table"></table>
+                            </div>
                             <button class="aui-button">
                                 <span class="aui-icon aui-icon-small aui-iconfont-add"></span>
                                 Add Section
@@ -167,6 +156,78 @@
             </div>
         </div>
     </section>
+    
+    <section role="dialog" id="new_project_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
+        <header class="aui-dialog2-header">
+            <h2 class="aui-dialog2-header-main">Create Project</h2>
+            <a class="aui-dialog2-header-close">
+                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
+            </a>
+        </header>
+        <div class="aui-dialog2-content">
+            <p>Hello World</p>
+        </div>
+        <footer class="aui-dialog2-footer">
+            <div class="aui-dialog2-footer-actions">
+                <button id="dialog-submit-button" class="aui-button aui-button-primary">Create</button>
+                <button id="new_project_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
+            </div>
+        </footer>
+    </section>
+    
+    <section role="dialog" id="new_folder_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
+        <header class="aui-dialog2-header">
+            <h2 class="aui-dialog2-header-main">Create Folder</h2>
+            <a class="aui-dialog2-header-close">
+                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
+            </a>
+        </header>
+        <div class="aui-dialog2-content">
+            <p>Hello World</p>
+        </div>
+        <footer class="aui-dialog2-footer">
+            <div class="aui-dialog2-footer-actions">
+                <button id="dialog-submit-button" class="aui-button aui-button-primary">Create</button>
+                <button id="new_folder_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
+            </div>
+        </footer>
+    </section>
+    
+    <section role="dialog" id="import_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
+        <header class="aui-dialog2-header">
+            <h2 class="aui-dialog2-header-main">Import Project</h2>
+            <a class="aui-dialog2-header-close">
+                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
+            </a>
+        </header>
+        <div class="aui-dialog2-content">
+            <p>Hello World</p>
+        </div>
+        <footer class="aui-dialog2-footer">
+            <div class="aui-dialog2-footer-actions">
+                <button id="dialog-submit-button" class="aui-button aui-button-primary">Import</button>
+                <button id="import_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
+            </div>
+        </footer>
+    </section>
+
+    <section role="dialog" id="export_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
+        <header class="aui-dialog2-header">
+            <h2 class="aui-dialog2-header-main">Export Project</h2>
+            <a class="aui-dialog2-header-close">
+                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
+            </a>
+        </header>
+        <div class="aui-dialog2-content">
+            <p>Hello World</p>
+        </div>
+        <footer class="aui-dialog2-footer">
+            <div class="aui-dialog2-footer-actions">
+                <button id="dialog-submit-button" class="aui-button aui-button-primary">Export</button>
+                <button id="export_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
+            </div>
+        </footer>
+    </section>
 
      <script id="connect-loader" data-options="sizeToParent:true;">
         (function() {
@@ -188,6 +249,11 @@
             document.getElementsByTagName("head")[0].appendChild(script);
             
             initDocumentTable();
+            initNewProjectDialog();
+            initNewFolderDialog();
+            initImportDialog();
+            initExportDialog();
+            initRunAnalysis();
         })();
         
         function initDocumentTable() {
@@ -225,6 +291,56 @@
                 allowDelete: true,
                 createPosition: "bottom",
                 deleteConfirmation: true
+            });
+        }
+        
+        function initNewProjectDialog() {
+            AJS.$("#new_project_button").click(function() {
+                AJS.dialog2("#new_project_dialog").show();
+            });
+
+            AJS.$("#new_project_dialog_close_button").click(function(e) {
+                e.preventDefault();
+                AJS.dialog2("#new_project_dialog").hide();
+            });
+        }
+        
+        function initNewFolderDialog() {
+            AJS.$("#new_folder_button").click(function() {
+                AJS.dialog2("#new_folder_dialog").show();
+            });
+
+            AJS.$("#new_folder_dialog_close_button").click(function(e) {
+                e.preventDefault();
+                AJS.dialog2("#new_folder_dialog").hide();
+            });
+        }
+        
+        function initImportDialog() {
+            AJS.$("#import_button").click(function() {
+                AJS.dialog2("#import_dialog").show();
+            });
+
+            AJS.$("#import_dialog_close_button").click(function(e) {
+                e.preventDefault();
+                AJS.dialog2("#import_dialog").hide();
+            });
+        }
+        
+        function initExportDialog() {
+            AJS.$("#export_button").click(function() {
+                AJS.dialog2("#export_dialog").show();
+            });
+
+            AJS.$("#export_dialog_close_button").click(function(e) {
+                e.preventDefault();
+                AJS.dialog2("#export_dialog").hide();
+            });
+        }
+        
+        function initRunAnalysis() {
+            $("#run_analysis_button").click(function() {
+                
             });
         }
     </script>

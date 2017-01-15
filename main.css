@@ -14,10 +14,26 @@
   margin-bottom: 5px !important;
 }
 
+.pt-10 {
+  padding-top: 10px !important;
+}
+
+.mb-10 {
+  margin-bottom: 10px !important;
+}
+
+.mb-neg-20 {
+  margin-bottom: -20px !important;
+}
+
 .auto-height {
   height: auto !important;
 }
 
 .font-size-150 {
   font-size: 150% !important;
+}
+
+.cursor-pointer {
+  cursor: pointer !important;
 }
