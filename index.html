@@ -48,12 +48,7 @@
 
         <div class="aui-page-panel">
             <div class="aui-page-panel-inner">
-                <section class="aui-page-panel-content">
-                    <div class="aui-page-header">
-                        <div class="aui-page-header-main">
-                            <h1>Java is dead, uncool, and SO 90's.</h1>
-                      </div>
-                    </div>
+                <section class="">
                     <nav class="aui-header aui-dropdown2-trigger-group" role="navigation" data-aui-responsive="true">
                         <div class="aui-header-primary">
                             <ul class="aui-nav __skate" style="width: auto;">
@@ -110,7 +105,7 @@
                             </ul>
                         </div>
                     </nav>
-                    <div class="aui-tabs horizontal-tabs">
+                    <div class="aui-tabs horizontal-tabs mt-0">
                         <ul class="tabs-menu">
                             <li class="menu-item active-tab">
                                 <a href="#tabs-example-first">EU_LEDS_2014 - Documents</a>
@@ -175,7 +170,7 @@
 
      <script id="connect-loader" data-options="sizeToParent:true;">
         (function() {
-            /*var getUrlParam = function (param) {
+            var getUrlParam = function (param) {
                 var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
                 return decodeURIComponent(codedParam);
             };
@@ -190,9 +185,9 @@
                 script.setAttribute('data-options', options);
             }
 
-            document.getElementsByTagName("head")[0].appendChild(script);*/
+            document.getElementsByTagName("head")[0].appendChild(script);
             
-            //initDocumentTable();
+            initDocumentTable();
         })();
         
         function initDocumentTable() {
