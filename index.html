@@ -195,8 +195,8 @@
                 autoFocus: true,
                 el: jQuery("#project-config-versions-table"),
                 resources: {
-                    all: "rest/project/HSP/versions?expand=operations",
-                    self: "rest/version"
+                    all: "data.json",
+                    self: "data.json"
                 },
                 columns: [
                     {
@@ -222,7 +222,6 @@
                 ],
                 allowCreate: true,
                 allowEdit: true,
-                allowReorder: true,
                 allowDelete: true,
                 createPosition: "bottom",
                 deleteConfirmation: true
