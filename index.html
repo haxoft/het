@@ -165,7 +165,10 @@
             </a>
         </header>
         <div class="aui-dialog2-content">
-            <p>Hello World</p>
+            <div class="field-group">
+                <label for="new_project_name">Project Name</label>
+                <input class="text long-field" type="text" id="new_project_name" name="new_project_name" title="Project Name">
+            </div>
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
@@ -183,7 +186,10 @@
             </a>
         </header>
         <div class="aui-dialog2-content">
-            <p>Hello World</p>
+            <div class="field-group">
+                <label for="new_folder_name">Folder Name</label>
+                <input class="text long-field" type="text" id="new_folder_name" name="new_folder_name" title="Folder Name">
+            </div>
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
@@ -201,7 +207,10 @@
             </a>
         </header>
         <div class="aui-dialog2-content">
-            <p>Hello World</p>
+            <div class="field-group">
+                <label for="import_file">Select the project to import</label>
+                <input class="upfile" id="import_file" type="file" Title="Select the project to import" />
+            </div>
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
@@ -219,7 +228,23 @@
             </a>
         </header>
         <div class="aui-dialog2-content">
-            <p>Hello World</p>
+            <fieldset class="group">
+                <legend><span>Export project as</span></legend>
+                <div class="radio ml-20">
+                    <input class="radio" type="radio" checked="checked" name="export_type" id="export_machine_readable">
+                    <label for="irOne">machine-readable</label>
+                </div>
+                <div class="radio ml-20">
+                    <input class="radio" type="radio" name="export_type" id="export_human_readable">
+                    <label for="irTwo">human-readable</label>
+                    <select class="select ml-20" id="export_filetype" name="export_filetype" title="File type">
+                        <option>pdf</option>
+                        <option>docx</option>
+                        <option>odt</option>
+                        <option>txt</option>
+                    </select>
+                </div>
+            </fieldset>
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
@@ -231,7 +256,7 @@
 
      <script id="connect-loader" data-options="sizeToParent:true;">
         (function() {
-            var getUrlParam = function (param) {
+            /*var getUrlParam = function (param) {
                 var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
                 return decodeURIComponent(codedParam);
             };
@@ -246,7 +271,7 @@
                 script.setAttribute('data-options', options);
             }
 
-            document.getElementsByTagName("head")[0].appendChild(script);
+            document.getElementsByTagName("head")[0].appendChild(script);*/
             
             initDocumentTable();
             initNewProjectDialog();
