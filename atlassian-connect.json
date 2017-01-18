@@ -2,7 +2,7 @@
      "name": "HET",
      "description": "Haxoft Extraction Tool",
      "key": "de.haxoft.het",
-     "baseUrl": "https://cb411211.ngrok.io",
+     "baseUrl": "https://cf1816ec.ngrok.io",
      "vendor": {
          "name": "Haxoft",
          "url": "http://haxoft.de"
@@ -18,7 +18,7 @@
                  "key": "het-index",
                  "location": "system.top.navigation.bar",
                  "name": {
-                     "value": "Java is Bleee"
+                     "value": "HET"
                  }
              }
          ]
