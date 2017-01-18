@@ -2,7 +2,7 @@
      "name": "HET",
      "description": "Haxoft Extraction Tool",
      "key": "de.haxoft.het",
-     "baseUrl": "https://bf37bd6f.ngrok.io",
+     "baseUrl": "https://81045fa3.ngrok.io",
      "vendor": {
          "name": "Haxoft",
          "url": "http://haxoft.de"
