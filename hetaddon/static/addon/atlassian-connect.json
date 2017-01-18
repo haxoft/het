@@ -14,11 +14,11 @@
      "modules": {
          "generalPages": [
              {
-                 "url": "/het/index",
+                 "url": "/het/",
                  "key": "het-index",
                  "location": "system.top.navigation.bar",
                  "name": {
-                     "value": "test"
+                     "value": "HET"
                  }
              }
          ]
