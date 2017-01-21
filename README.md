@@ -1,4 +1,4 @@
-# het
+# HET
 Haxoft Extraction Tool - Atlassian plugin
 
 Running instructions:
