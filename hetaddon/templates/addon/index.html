@@ -10,7 +10,8 @@
     <script src="https://aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui-experimental.min.js"></script>
     <script src="https://aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui-datepicker.min.js"></script>
     <script src="https://aui-cdn.atlassian.com/aui-adg/6.0.4/js/aui-soy.min.js"></script>
-    <script src="hetaddon/static/addon/backbone.js"></script>
+    <script src="/static/addon/underscore.js"></script>
+    <script src="/static/addon/backbone.js"></script>
 </head>
 <body>
     <section id="content">
@@ -23,16 +24,31 @@
                                 <div class="aui-nav-heading" title="Actions">
                                     <strong>Projects</strong>
                                 </div>
-                                <ul class="aui-nav" title="Page actions">
-                                    <li>
-                                        <a class="aui-nav-item" href="#" title="EU_LEDS_2014"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span>EU_LEDS_2014</a>
-                                    </li>
-                                    <li>
-                                        <a class="aui-nav-item" href="#" title="EU_IOT_2010"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span>EU_IOT_2010</a>
-                                    </li>
-                                    <li>
-                                        <a class="aui-nav-item" href="#" title="EU_H2020_2012"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span>EU_H2020_2012</a>
-                                    </li>
+                                <ul class="aui-nav" title="Page actions" id="projects">
+                                    <script type="text/template" id="folder_template">
+                                        <li>
+                                            <ul class="aui-nav">
+                                                <a class="aui-nav-item" title="<%= name %>"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span><%= name %></a>
+                                                <% folders.each(function(folder) { %>
+                                                    <%= app.FolderTemplate(folder.attributes) %>
+                                                <% }); %>
+                                                <% projects.each(function(project) { %>
+                                                    <%= app.ProjectTemplate(project.attributes) %>
+                                                <% }); %>
+                                            </ul>
+                                        </li>
+                                    </script>
+                                    <script type="text/template" id="project_template">
+                                        <li>
+                                            <a class="aui-nav-item" title="<%= name %>"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span><%= name %></a>
+                                            <ul class="aui-nav">
+                                                <a class="aui-nav-item" title="Documents"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span>Documents</a>
+                                                <% if(requirementsExtracted) { %>
+                                                    <a class="aui-nav-item" title="Requirements"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span>Requirements</a>
+                                                <% } %>
+                                            </ul>
+                                        </li>
+                                    </script>
                                 </ul>
                             </div>
                         </div>
@@ -110,7 +126,7 @@
                                         <input class="text" type="text" id="section_1_name" name="section_1_name" title="Section Name">
                                     </div>
                                 </form>
-                                <table id="project-config-versions-table"></table>
+                                <table id="documents_table"></table>
                             </div>
                             <button class="aui-button">
                                 <span class="aui-icon aui-icon-small aui-iconfont-add"></span>
@@ -173,7 +189,7 @@
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
-                <button id="dialog-submit-button" class="aui-button aui-button-primary">Create</button>
+                <button id="new_project_dialog_submit_button" class="aui-button aui-button-primary">Create</button>
                 <button id="new_project_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
             </div>
         </footer>
@@ -194,7 +210,7 @@
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
-                <button id="dialog-submit-button" class="aui-button aui-button-primary">Create</button>
+                <button id="new_folder_dialog_submit_button" class="aui-button aui-button-primary">Create</button>
                 <button id="new_folder_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
             </div>
         </footer>
@@ -215,7 +231,7 @@
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
-                <button id="dialog-submit-button" class="aui-button aui-button-primary">Import</button>
+                <button id="import_dialog_submit_button" class="aui-button aui-button-primary">Import</button>
                 <button id="import_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
             </div>
         </footer>
@@ -233,11 +249,11 @@
                 <legend><span>Export project as</span></legend>
                 <div class="radio ml-20">
                     <input class="radio" type="radio" checked="checked" name="export_type" id="export_machine_readable">
-                    <label for="irOne">machine-readable</label>
+                    <label for="export_machine_readable">machine-readable</label>
                 </div>
                 <div class="radio ml-20">
                     <input class="radio" type="radio" name="export_type" id="export_human_readable">
-                    <label for="irTwo">human-readable</label>
+                    <label for="export_human_readable">human-readable</label>
                     <select class="select ml-20" id="export_filetype" name="export_filetype" title="File type">
                         <option>pdf</option>
                         <option>docx</option>
@@ -249,13 +265,16 @@
         </div>
         <footer class="aui-dialog2-footer">
             <div class="aui-dialog2-footer-actions">
-                <button id="dialog-submit-button" class="aui-button aui-button-primary">Export</button>
+                <button id="export_dialog_submit_button" class="aui-button aui-button-primary">Export</button>
                 <button id="export_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
             </div>
         </footer>
     </section>
 
      <script id="connect-loader" data-options="sizeToParent:true;">
+        var apiUrlPrefix = "api/";
+        var app = {};
+     
         (function() {
             var getUrlParam = function (param) {
                 var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
@@ -274,21 +293,22 @@
 
             document.getElementsByTagName("head")[0].appendChild(script);
             
-            initDocumentTable();
+            //initDocumentTable();
             initNewProjectDialog();
             initNewFolderDialog();
             initImportDialog();
             initExportDialog();
             initRunAnalysis();
+            initProjects();
         })();
         
         function initDocumentTable() {
             new AJS.RestfulTable({
                 autoFocus: true,
-                el: jQuery("#project-config-versions-table"),
+                el: jQuery("#documents_table"),
                 resources: {
-                    all: "data.json",
-                    self: "data.json"
+                    all: apiUrlPrefix + "projects/{{ projectId }}/documents",
+                    self: apiUrlPrefix + "projects/{{ projectId }}/documents"
                 },
                 columns: [
                     {
@@ -329,6 +349,24 @@
                 e.preventDefault();
                 AJS.dialog2("#new_project_dialog").hide();
             });
+            
+            AJS.$("#new_project_dialog_submit_button").click(function() {
+                var input = AJS.$("#new_project_name").val();
+                if (input == "") showErrorMessage("Please provide a name for the new project.");
+                AJS.$.ajax({
+                    url: apiUrlPrefix + "/projects",
+                    method: "POST",
+                    dataType: "application/json",
+                    data: input,
+                    success: function() {
+                        AJS.dialog2("#new_project_dialog").hide();
+                        showSuccessMessage("The Project was successfully created.");
+                    },
+                    error: function() {
+                        showErrorMessage("We could not create the project, please try again or contact our webmaster.");
+                    }
+                });
+            });
         }
         
         function initNewFolderDialog() {
@@ -339,6 +377,24 @@
             AJS.$("#new_folder_dialog_close_button").click(function(e) {
                 e.preventDefault();
                 AJS.dialog2("#new_folder_dialog").hide();
+            });
+            
+            AJS.$("#new_folder_dialog_submit_button").click(function() {
+                var input = AJS.$("#new_project_name").val();
+                if (input == "") showErrorMessage("Please provide a name for the new project.");
+                AJS.$.ajax({
+                    url: apiUrlPrefix + "/folders",
+                    method: "POST",
+                    dataType: "application/json",
+                    data: input,
+                    success: function() {
+                        AJS.dialog2("#new_project_dialog").hide();
+                        showSuccessMessage("The Folder was successfully created.");
+                    },
+                    error: function() {
+                        showErrorMessage("We could not create the folder, please try again or contact our webmaster.");
+                    }
+                });
             });
         }
         
@@ -351,6 +407,10 @@
                 e.preventDefault();
                 AJS.dialog2("#import_dialog").hide();
             });
+            
+            AJS.$("#import_dialog_submit_button").click(function() {
+                //TODO
+            });
         }
         
         function initExportDialog() {
@@ -362,12 +422,109 @@
                 e.preventDefault();
                 AJS.dialog2("#export_dialog").hide();
             });
+            
+            AJS.$("#export_dialog_submit_button").click(function() {
+                //TODO
+            });
         }
         
         function initRunAnalysis() {
             $("#run_analysis_button").click(function() {
-                
+                //TODO
             });
+        }
+        
+        function initProjects() {
+            app.Project = Backbone.Model.extend({
+                defaults: {
+                    id: 0,
+                    name: "",
+                    requirementsExtracted: false
+                },
+                url: apiUrlPrefix + "projects"
+            });
+            
+            app.Folder = Backbone.Model.extend({
+                defaults: {
+                    id: 0,
+                    name: "",
+                    folders: [],
+                    projects: []
+                },
+                url: apiUrlPrefix + "folders"
+            });
+            
+            app.ProjectList = Backbone.Collection.extend({
+                model: app.Project,
+                url: apiUrlPrefix + "projects"
+            });
+            
+            app.FolderList = Backbone.Collection.extend({
+                model: app.Folder,
+                url: apiUrlPrefix + "folders"
+            });
+            
+            var folderList = [
+                { id: 1, name: "European Commission", folders: [
+                    {id: 2, name: "Some Subfolder", folders: [], projects: [
+                        {id: 1, name: "EU_LEDS_2014"},
+                        {id: 2, name: "EU_IOT_2012"}
+                    ]}
+                ], projects: [
+                    {id: 3, name: "Some EU Project"}
+                ] },
+                { id: 3, name: "DFG", folders:[], projects: [
+                    {id: 4, name: "Some DFG Project"}
+                ]}
+            ];
+            
+            function parseProject(projectObj) {
+                return new app.Project({id: projectObj.id, name: projectObj.name, requirementsExtracted: projectObj.requirementsExtracted});
+            }
+            
+            function parseFolder(folderObj) {
+                var folders = parseFolderList(folderObj.folders);
+                var projects = parseProjectList(folderObj.projects);
+                return new app.Folder({id: folderObj.id, name: folderObj.name, folders, projects});
+            }
+            
+            function parseProjectList(projectArr) {
+                var result = new app.ProjectList([]);
+                _.each(projectArr, function(project) {
+                    result.add(parseProject(project));
+                });
+                return result;
+            }
+            
+            function parseFolderList(folderArr) {
+                var result = new app.FolderList([]);
+                _.each(folderArr, function(folder) {
+                    result.add(parseFolder(folder));
+                });
+                return result;
+            }
+            
+            app.FolderTemplate = _.template($("#folder_template").html());
+            app.ProjectTemplate = _.template($("#project_template").html());
+        
+            app.ProjectsView = Backbone.View.extend({
+                el: "#projects",
+                
+                initialize: function(){
+                  app.projectFolders = parseFolderList(folderList);
+                  this.render();
+                },
+                
+                render: function(){
+                  var result = "";
+                  app.projectFolders.each(function(folder) {
+                      result += app.FolderTemplate(folder.attributes);
+                  });
+                  this.$el.html(result);
+                }
+            });
+            
+            new app.ProjectsView();
         }
     </script>
 </body>
