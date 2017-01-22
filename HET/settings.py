@@ -25,7 +25,7 @@ SECRET_KEY = ')=27kct7y$8j&&1gr@9+o-*(dyuyysvd=9z_g-&kzcr@bkzthg'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["2549873e.ngrok.io"]
+ALLOWED_HOSTS = ["7c7a967d.ngrok.io"]
 
 
 # Application definition
@@ -76,8 +76,12 @@ WSGI_APPLICATION = 'HET.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'hetdb',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 
