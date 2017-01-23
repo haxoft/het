@@ -370,13 +370,13 @@
             });
             
             AJS.$("#new_folder_dialog_submit_button").click(function() {
-                var input = AJS.$("#new_project_name").val();
-                if (input == "") showErrorMessage("Please provide a name for the new project.");
+                var name = AJS.$("#new_project_name").val();
+                if (name == "") showErrorMessage("Please provide a name for the new project.");
                 AJS.$.ajax({
                     url: apiUrlPrefix + "/folders",
                     method: "POST",
                     dataType: "application/json",
-                    data: input,
+                    data: name,
                     success: function() {
                         AJS.dialog2("#new_project_dialog").hide();
                         showSuccessMessage("The Folder was successfully created.");
@@ -399,7 +399,20 @@
             });
             
             AJS.$("#import_dialog_submit_button").click(function() {
-                //TODO
+                var fileData = $('#import_file').prop('files')[0];
+                var formData = new FormData();
+                form_data.append('file', file_data);
+                AJS.$.ajax({
+                    url: apiUrlPrefix + "/projects/import",
+                    method: "POST",
+                    data: formData,
+                    success: function() {
+                        showSuccessMessage("Project was imported successfully.");
+                    },
+                    error: function() {
+                        showErrorMessage("An error occured while importing the project, please try again or contact our webmaster.");
+                    }
+                });
             });
         }
         
@@ -414,7 +427,16 @@
             });
             
             AJS.$("#export_dialog_submit_button").click(function() {
-                //TODO
+                AJS.$.ajax({
+                    url: apiUrlPrefix + "/projects",
+                    method: "GET",
+                    success: function() {
+                        showSuccessMessage("Here's your project export");
+                    },
+                    error: function() {
+                        showErrorMessage("An error occured while importing the project, please try again or contact our webmaster.");
+                    }
+                });
             });
         }
         
