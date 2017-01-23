@@ -282,7 +282,7 @@
 
             document.getElementsByTagName("head")[0].appendChild(script);
             
-            //initDocumentTable();
+            initDocumentTable();
             initNewProjectDialog();
             initNewFolderDialog();
             initImportDialog();
@@ -297,8 +297,8 @@
                 autoFocus: true,
                 el: jQuery("#documents_table"),
                 resources: {
-                    all: apiUrlPrefix + "projects/{{ projectId }}/documents",
-                    self: apiUrlPrefix + "projects/{{ projectId }}/documents"
+                    all: apiUrlPrefix + "projects/1/documents",
+                    self: apiUrlPrefix + "projects/1/documents"
                 },
                 columns: [
                     {
@@ -476,20 +476,6 @@
                 url: apiUrlPrefix + "folders"
             });
             
-            var folderList = [
-                { id: 1, name: "European Commission", folders: [
-                    {id: 2, name: "Some Subfolder", folders: [], projects: [
-                        {id: 1, name: "EU_LEDS_2014"},
-                        {id: 2, name: "EU_IOT_2012"}
-                    ]}
-                ], projects: [
-                    {id: 3, name: "Some EU Project"}
-                ] },
-                { id: 3, name: "DFG", folders:[], projects: [
-                    {id: 4, name: "Some DFG Project"}
-                ]}
-            ];
-            
             function parseProjectList(projectArr) {
                 var result = new app.ProjectList([]);
                 _.each(projectArr, function(projectObj) {
@@ -517,8 +503,15 @@
                 el: "#projects",
                 
                 initialize: function(){
-                  app.projectFolders = parseFolderList(folderList);
-                  this.render();
+                    var self = this;
+                    $.ajax({
+                        url: apiUrlPrefix + "projects",
+                        method: "GET",
+                        success: function(response) {
+                            app.projectFolders = parseFolderList(JSON.parse(response));
+                            self.render();
+                        }
+                    });
                 },
                 
                 render: function(){
@@ -548,16 +541,6 @@
                 url: apiUrlPrefix + "requirements"
             });
             
-            var requirementList = [
-                { id: 1, name: "Topic", values: ["Innovating SMEs"]},
-                { id: 2, name: "Deadline", values: ["28/03/2017 17:00:00"]},
-                { id: 3, name: "Project context", values: ["Horizon 2020", "European Commission", "Industrial Leadership"]},
-                { id: 4, name: "Length", values: ["60 pages"]},
-                { id: 5, name: "Participation limitations", values: ["The participation of female members must be at least 30%", 
-                    "Consortium institutions must originate from 3 different EU countries"]},
-                { id: 6, name: "Scope", values: ["The above describes three intervowen aspects of a challenge to segment the (SME-)Clients of public innovation support in order to achieve a higher social return from the investments into ..."]}
-            ];
-            
             function parseRequirementList(requirementArr) {
                 var result = new app.RequirementList([]);
                 _.each(requirementArr, function(requirementObj) {
@@ -573,8 +556,15 @@
                 el: "#requirements",
                 
                 initialize: function(){
-                  app.requirements = parseRequirementList(requirementList);
-                  this.render();
+                    var self = this;
+                    $.ajax({
+                        url: apiUrlPrefix + "projects/1/requirements",
+                        method: "GET",
+                        success: function(response) {
+                            app.requirements = parseRequirementList(JSON.parse(response));
+                            self.render();
+                        }
+                    });
                 },
                 
                 render: function(){
