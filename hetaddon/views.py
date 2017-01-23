@@ -20,8 +20,8 @@ def index(request):
     user_projects_list = Project.objects.all()
 
     context = {
-        'folders': user_folders_list,
-        'projects:': user_projects_list,
+        'user_folders_list': user_folders_list,
+        'user_projects_list': user_projects_list,
     }
 
     return render(request, 'addon/index.html', context)
