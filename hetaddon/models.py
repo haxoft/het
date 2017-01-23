@@ -5,6 +5,9 @@ class User(models.Model):
     name = models.CharField(max_length=128)
     email = models.CharField(max_length=128)
 
+    def __str__(self):
+        return "{ name:" + self.name + ", email:" + self.email + "}"
+
 
 class ExternalPlatform(models.Model):
     platform_id = models.IntegerField()  # is nullable?
@@ -12,10 +15,16 @@ class ExternalPlatform(models.Model):
     user_ext_id = models.IntegerField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return "{ name:" + self.platform_name + ", userExtId:" + str(self.user_ext_id) + ", userId:" + str(self.user) + " }"
+
 
 class Folder(models.Model):
     name = models.CharField(max_length=128)
-    parent_folder = models.ForeignKey("self", on_delete=models.CASCADE)
+    parent_folder = models.ForeignKey("self", on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return "{ name:" + self.name + ", parentFolder:" + self.parent_folder + " }"
 
 
 class Section(models.Model):
@@ -26,7 +35,7 @@ class Section(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=128)
     created = models.DateTimeField()
-    members = models.ManyToManyField(User, through='Membership')
+    members = models.ManyToManyField(User, through='Membership', null=True)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE)
 
 
