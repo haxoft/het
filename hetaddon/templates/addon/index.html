@@ -26,9 +26,9 @@
                                 </div>
                                 <ul class="aui-nav" title="Page actions" id="projects">
                                     <script type="text/template" id="folder_template">
-                                        <li>
-                                            <ul class="aui-nav">
-                                                <a class="aui-nav-item" title="<%= name %>"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span><%= name %></a>
+                                        <li class="pl-7">
+                                            <ul class="aui-nav pl-7">
+                                                <a class="aui-nav-item aui-button aui-button-link" title="<%= name %>" onclick="expandCollapse(this)"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span><%= name %></a>
                                                 <% folders.each(function(folder) { %>
                                                     <%= app.FolderTemplate(folder.attributes) %>
                                                 <% }); %>
@@ -39,12 +39,16 @@
                                         </li>
                                     </script>
                                     <script type="text/template" id="project_template">
-                                        <li>
-                                            <a class="aui-nav-item" title="<%= name %>"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span><%= name %></a>
-                                            <ul class="aui-nav">
-                                                <a class="aui-nav-item" title="Documents"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span>Documents</a>
+                                        <li class="pl-7">
+                                            <ul class="aui-nav pl-7">
+                                                <a class="aui-nav-item aui-button aui-button-link" title="<%= name %>" onclick="expandCollapse(this)"><span class="aui-icon aui-icon-small aui-iconfont-collapsed mr-0"></span><%= name %></a>
+                                                <li class="pl-10">
+                                                    <a class="aui-nav-item pl-7" title="Documents"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Documents</a>
+                                                </li>
                                                 <% if(requirementsExtracted) { %>
-                                                    <a class="aui-nav-item" title="Requirements"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span>Requirements</a>
+                                                    <li class="pl-10">
+                                                        <a class="aui-nav-item pl-7" title="Requirements"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Requirements</a>
+                                                    </li>
                                                 <% } %>
                                             </ul>
                                         </li>
@@ -134,38 +138,18 @@
                             </button>
                         </div>
                         <div class="tabs-pane" id="tabs-example-second">
-                            <form class="aui mt-20">
-                                <div class="field-group">
-                                    <label for="topic">Topic</label>
-                                    <input class="text long-field" type="text" id="topic" name="topic" title="Topic">
-                                </div>
-                                <div class="field-group">
-                                    <label for="deadline">Deadline</label>
-                                    <input class="text long-field" type="text" id="deadline" name="deadline" title="Deadline">
-                                </div>
-                                <div class="field-group">
-                                    <label for="project_context">Project context</label>
-                                    <select class="multi-select long-field" size="4" multiple="multiple" id="project_context" name="project_context">
-                                        <option>Horizon 2020</option>
-                                        <option>European Commission</option>
-                                        <option>Industrial Leadership</option>
-                                    </select>
-                                </div>
-                                <div class="field-group">
-                                    <label for="length">Length</label>
-                                    <input class="text long-field" type="text" id="length" name="length" title="Length">
-                                </div>
-                                <div class="field-group">
-                                    <label for="participation_limitations">Participation Limitations</label>
-                                    <select class="multi-select long-field" size="4" multiple="multiple" id="participation_limitations" name="participation_limitations">
-                                        <option>The participation of female members must be at least 30%</option>
-                                        <option>Consortium institutions must originate from 3 different EU countries</option>
-                                    </select>
-                                </div>
-                                <div class="field-group">
-                                    <label for="scope">Scope</label>
-                                    <textarea rows="6" class="textarea long-field" name="scope" id="scope">The above describes three intervowen aspects of a challenge to segment the (SME-)Clients of public innovation support in order to achieve a higher social return from the investments into ...</textarea>
-                                </div>
+                            <form class="aui mt-20" id="requirements">
+                                <script type="text/template" id="requirement_template">
+                                    <div class="field-group">
+                                        <label for="<%= name %>_values"><%= name %></label>
+                                        <div name="<%= name %>_values">
+                                            <% _.each(values, function(value) { %>
+                                                <textarea class="text long-field" type="text" id="<%= name %>" name="<%= name %>" title="<%= name %>"><%= value %></textarea>
+                                                <br/>
+                                            <% }); %>
+                                        </div>
+                                    </div>
+                                </script>
                             </form>
                         </div>
                     </div>
@@ -274,6 +258,11 @@
      <script id="connect-loader" data-options="sizeToParent:true;">
         var apiUrlPrefix = "api/";
         var app = {};
+        
+        function expandCollapse(element) {
+            var self = $(element);
+            self.siblings().toggle();
+        }
      
         (function() {
             var getUrlParam = function (param) {
@@ -300,6 +289,7 @@
             initExportDialog();
             initRunAnalysis();
             initProjects();
+            initRequirements();
         })();
         
         function initDocumentTable() {
@@ -478,28 +468,22 @@
                 ]}
             ];
             
-            function parseProject(projectObj) {
-                return new app.Project({id: projectObj.id, name: projectObj.name, requirementsExtracted: projectObj.requirementsExtracted});
-            }
-            
-            function parseFolder(folderObj) {
-                var folders = parseFolderList(folderObj.folders);
-                var projects = parseProjectList(folderObj.projects);
-                return new app.Folder({id: folderObj.id, name: folderObj.name, folders, projects});
-            }
-            
             function parseProjectList(projectArr) {
                 var result = new app.ProjectList([]);
-                _.each(projectArr, function(project) {
-                    result.add(parseProject(project));
+                _.each(projectArr, function(projectObj) {
+                    var project = new app.Project({id: projectObj.id, name: projectObj.name, requirementsExtracted: projectObj.requirementsExtracted});
+                    result.add(project);
                 });
                 return result;
             }
             
             function parseFolderList(folderArr) {
                 var result = new app.FolderList([]);
-                _.each(folderArr, function(folder) {
-                    result.add(parseFolder(folder));
+                _.each(folderArr, function(folderObj) {
+                    var subFolders = parseFolderList(folderObj.folders);
+                    var projects = parseProjectList(folderObj.projects);
+                    var folder = new app.Folder({id: folderObj.id, name: folderObj.name, folders: subFolders, projects});
+                    result.add(folder);
                 });
                 return result;
             }
@@ -525,6 +509,62 @@
             });
             
             new app.ProjectsView();
+        }
+        
+        function initRequirements() {
+            app.Requirement = Backbone.Model.extend({
+                defaults: {
+                    id: 0,
+                    name: "",
+                    values: []
+                },
+                url: apiUrlPrefix + "requirements"
+            });
+            
+            app.RequirementList = Backbone.Collection.extend({
+                model: app.Requirement,
+                url: apiUrlPrefix + "requirements"
+            });
+            
+            var requirementList = [
+                { id: 1, name: "Topic", values: ["Innovating SMEs"]},
+                { id: 2, name: "Deadline", values: ["28/03/2017 17:00:00"]},
+                { id: 3, name: "Project context", values: ["Horizon 2020", "European Commission", "Industrial Leadership"]},
+                { id: 4, name: "Length", values: ["60 pages"]},
+                { id: 5, name: "Participation limitations", values: ["The participation of female members must be at least 30%", 
+                    "Consortium institutions must originate from 3 different EU countries"]},
+                { id: 6, name: "Scope", values: ["The above describes three intervowen aspects of a challenge to segment the (SME-)Clients of public innovation support in order to achieve a higher social return from the investments into ..."]}
+            ];
+            
+            function parseRequirementList(requirementArr) {
+                var result = new app.RequirementList([]);
+                _.each(requirementArr, function(requirementObj) {
+                    var requirement = new app.Requirement({id: requirementObj.id, name: requirementObj.name, values: requirementObj.values});
+                    result.add(requirement);
+                });
+                return result;
+            }
+            
+            app.RequirementTemplate = _.template($("#requirement_template").html());
+        
+            app.RequirementsView = Backbone.View.extend({
+                el: "#requirements",
+                
+                initialize: function(){
+                  app.requirements = parseRequirementList(requirementList);
+                  this.render();
+                },
+                
+                render: function(){
+                  var result = "";
+                  app.requirements.each(function(requirement) {
+                      result += app.RequirementTemplate(requirement.attributes);
+                  });
+                  this.$el.html(result);
+                }
+            });
+            
+            new app.RequirementsView();
         }
     </script>
 </body>
