@@ -9,8 +9,9 @@ mocked = False
 
 def index(request):
 
-    # mock per backend run
     global mocked
+
+    # mock per backend run
     if not mocked:
         mock_data()
         mocked = True
@@ -25,6 +26,11 @@ def index(request):
         'user_projects_list': user_projects_list,
     }
 
+    print("Sending projects:")
+    print(*user_projects_list, sep=', ')
+    print("Sending folders:")
+    print(*user_folders_list, sep=', ')
+
     return render(request, 'addon/index.html', context)
 
 #fkn bad, pls rewrite after demo
@@ -36,7 +42,7 @@ def projects(request):
     result = result[0:-1]
     result += "]"
     return HttpResponse(result)
-    
+
 #fkn bad, pls rewrite after demo
 def projectRequirements(request, id):
     requirements = Requirement.objects.all()
@@ -62,34 +68,20 @@ def mock_data():
     clear_db()
     print("Mocking fake data into DB")
 
-    eu_comm_folder = Folder(name="European Commission", parent_folder=None)
-    eu_comm_folder.save()
-    dfg_folder = Folder(name="Deutsche Forschungsgemeinschaft", parent_folder=None)
-    dfg_folder.save()
-    daf_folder = Folder(name="Deutscher Akademischer Austauschdienst ", parent_folder=None)
-    daf_folder.save()
+    eu_comm_folder = Folder.objects.create(name="European Commission", parent_folder=None)
+    Folder.objects.create(name="Deutsche Forschungsgemeinschaft", parent_folder=None)
+    Folder.objects.create(name="Deutscher Akademischer Austauschdienst ", parent_folder=None)
 
-    user = User(name="username", email="mail@mail.com")
-    user.save()
+    user = User.objects.create(name="username", email="mail@mail.com")
 
-    eu_leds_project = Project(name="EU_LEDS_2014", created=timezone.now(), folder=eu_comm_folder)
-    eu_leds_project.save()
-
-    eu_iot_project = Project(name="EU_IOT_2010", created=timezone.now(), folder=eu_comm_folder)
-    eu_iot_project.save()
-
-    eu_2020_project = Project(name="EU_H2020_2012", created=timezone.now(), folder=eu_comm_folder)
-    eu_2020_project.save()
+    eu_leds_project = Project.objects.create(name="EU_LEDS_2014", created=timezone.now(), folder=eu_comm_folder)
+    Project.objects.create(name="EU_IOT_2010", created=timezone.now(), folder=eu_comm_folder)
+    Project.objects.create(name="EU_H2020_2012", created=timezone.now(), folder=eu_comm_folder)
     
-    some_category = DocumentCategory(name="Some Category")
-    some_category.save()
-    eu_leds_section_general = Section(name="General", project=eu_leds_project)
-    eu_leds_section_general.save()
-    eu_leds_doc_call = Document(name="Call.pdf", type="pdf", status="None", section=eu_leds_section_general, category=some_category)
-    eu_leds_doc_call.save()
-    eu_leds_req_1 = Requirement(name="Title", value="Innovating SMEs", project=eu_leds_project, document=eu_leds_doc_call)
-    eu_leds_req_1.save()
-
+    some_category = DocumentCategory.objects.create(name="Some Category")
+    eu_leds_section_general = Section.objects.create(name="General", project=eu_leds_project)
+    eu_leds_doc_call = Document.objects.create(name="Call.pdf", type="pdf", status="None", section=eu_leds_section_general, category=some_category)
+    Requirement.objects.create(name="Title", value="Innovating SMEs", project=eu_leds_project, document=eu_leds_doc_call)
 
     # eu_leds_project.members.add(user)
     # eu_leds_project.save()

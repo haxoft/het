@@ -16,7 +16,7 @@ class ExternalPlatform(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return "{ name:" + self.platform_name + ", userExtId:" + str(self.user_ext_id) + ", userId:" + str(self.user) + " }"
+        return "{ name:" + self.platform_name + ", userExtId:" + str(self.user_ext_id) + ", userId:" + str(self.user.id) + " }"
 
 
 class Folder(models.Model):
@@ -24,7 +24,8 @@ class Folder(models.Model):
     parent_folder = models.ForeignKey("self", on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return "{ name:" + self.name + ", parentFolder:" + self.parent_folder + " }"
+        parent_folder = "NULL" if (self.parent_folder is None) else str(self.parent_folder.id)
+        return "{ name:" + self.name + parent_folder + " }"
 
 
 class Section(models.Model):
@@ -37,6 +38,9 @@ class Project(models.Model):
     created = models.DateTimeField()
     members = models.ManyToManyField(User, through='Membership', null=True)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{ name:" + self.name + ", folder:" + str(self.folder.id) + " }"
 
 
 class Membership(models.Model):
