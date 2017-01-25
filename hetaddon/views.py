@@ -2,6 +2,7 @@ from django.shortcuts import render
 from .models import Folder, Project, User, Membership, Document, Requirement, DocumentCategory, Section
 from django.utils import timezone
 from django.http import HttpResponse
+from django.core import serializers
 
 #  nasty, remove
 mocked = False
@@ -33,8 +34,17 @@ def index(request):
 
     return render(request, 'addon/index.html', context)
 
-#fkn bad, pls rewrite after demo
+
+# this works
+def folders(request):
+
+    fldrs_json = serializers.serialize('json', Folder.objects.all())
+    return HttpResponse(fldrs_json, content_type='json')
+
+
+# here we are returning folders, instead of projects - remove?
 def projects(request):
+
     folders = Folder.objects.all()
     result = "["
     for folder in folders:

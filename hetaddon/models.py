@@ -5,6 +5,11 @@ class User(models.Model):
     name = models.CharField(max_length=128)
     email = models.CharField(max_length=128)
 
+    # def to_json(self):
+    #     return dict(
+    #         name=self.name, email=self.email
+    #     )
+
     def __str__(self):
         return "{ name:" + self.name + ", email:" + self.email + "}"
 
@@ -23,8 +28,13 @@ class Folder(models.Model):
     name = models.CharField(max_length=128)
     parent_folder = models.ForeignKey("self", on_delete=models.CASCADE, null=True)
 
+    # def to_json(self):
+    #     return dict(
+    #         name=self.name, parent_folder=("NULL" if self.parent_folder is None else self.parent_folder.id)
+    #     )
+
     def __str__(self):
-        parent_folder = "NULL" if (self.parent_folder is None) else str(self.parent_folder.id)
+        parent_folder = ", parentFolder:" + ("NULL" if (self.parent_folder is None) else str(self.parent_folder.id))
         return "{ name:" + self.name + parent_folder + " }"
 
 
