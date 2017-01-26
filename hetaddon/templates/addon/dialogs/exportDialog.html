@@ -1,0 +1,33 @@
+<section role="dialog" id="export_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
+    <header class="aui-dialog2-header">
+        <h2 class="aui-dialog2-header-main">Export Project</h2>
+        <a class="aui-dialog2-header-close">
+            <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
+        </a>
+    </header>
+    <div class="aui-dialog2-content">
+        <fieldset class="group">
+            <legend><span>Export project as</span></legend>
+            <div class="radio ml-20">
+                <input class="radio" type="radio" checked="checked" name="export_type" id="export_machine_readable">
+                <label for="export_machine_readable">machine-readable</label>
+            </div>
+            <div class="radio ml-20">
+                <input class="radio" type="radio" name="export_type" id="export_human_readable">
+                <label for="export_human_readable">human-readable</label>
+                <select class="select ml-20" id="export_filetype" name="export_filetype" title="File type">
+                    <option>pdf</option>
+                    <option>docx</option>
+                    <option>odt</option>
+                    <option>txt</option>
+                </select>
+            </div>
+        </fieldset>
+    </div>
+    <footer class="aui-dialog2-footer">
+        <div class="aui-dialog2-footer-actions">
+            <button id="export_dialog_submit_button" class="aui-button aui-button-primary">Export</button>
+            <button id="export_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
+        </div>
+    </footer>
+</section>

@@ -73,6 +73,7 @@ def projectDocuments(request, id):
     result += "]"
     return HttpResponse(result)
 
+
 def mock_data():
 
     clear_db()

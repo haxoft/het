@@ -5,57 +5,8 @@
 </head>
 <body>
     <section id="content">
-        <div class="aui-sidebar">
-            <div class="aui-sidebar-wrapper">
-                <div class="aui-sidebar-body">
-                    <nav class="aui-navgroup aui-navgroup-vertical">
-                        <div class="aui-navgroup-inner">
-                            <div class="aui-sidebar-group aui-sidebar-group-actions">
-                                <div class="aui-nav-heading" title="Actions">
-                                    <strong>Projects</strong>
-                                </div>
-                                <ul class="aui-nav" title="Page actions" id="projects">
-                                    <script type="text/template" id="folder_template">
-                                        <li class="pl-7">
-                                            <ul class="aui-nav pl-7">
-                                                <a class="aui-nav-item aui-button aui-button-link" title="<%= name %>" onclick="expandCollapse(this)"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span><%= name %></a>
-                                                <% folders.each(function(folder) { %>
-                                                    <%= app.FolderTemplate(folder.attributes) %>
-                                                <% }); %>
-                                                <% projects.each(function(project) { %>
-                                                    <%= app.ProjectTemplate(project.attributes) %>
-                                                <% }); %>
-                                            </ul>
-                                        </li>
-                                    </script>
-                                    <script type="text/template" id="project_template">
-                                        <li class="pl-7">
-                                            <ul class="aui-nav pl-7">
-                                                <a class="aui-nav-item aui-button aui-button-link" title="<%= name %>" onclick="expandCollapse(this)"><span class="aui-icon aui-icon-small aui-iconfont-collapsed mr-0"></span><%= name %></a>
-                                                <li class="pl-10">
-                                                    <a class="aui-nav-item pl-7" title="Documents"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Documents</a>
-                                                </li>
-                                                <% if(requirementsExtracted) { %>
-                                                    <li class="pl-10">
-                                                        <a class="aui-nav-item pl-7" title="Requirements"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Requirements</a>
-                                                    </li>
-                                                <% } %>
-                                            </ul>
-                                        </li>
-                                    </script>
-                                </ul>
-                            </div>
-                        </div>
-                    </nav>
-                </div>
 
-                <div class="aui-sidebar-footer">
-                    <a class="aui-button aui-button-subtle aui-sidebar-toggle aui-sidebar-footer-tipsy" title="Collapse sidebar ( [ )">
-                        <span class="aui-icon aui-icon-small"></span>
-                    </a>
-                </div>
-            </div>
-        </div>
+        {% include "addon/sidebar.html" %}
 
         <div class="aui-page-panel">
             <div class="aui-page-panel-inner">
@@ -152,102 +103,10 @@
         </div>
     </section>
     
-    <section role="dialog" id="new_project_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
-        <header class="aui-dialog2-header">
-            <h2 class="aui-dialog2-header-main">Create Project</h2>
-            <a class="aui-dialog2-header-close">
-                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
-            </a>
-        </header>
-        <div class="aui-dialog2-content">
-            <div class="field-group">
-                <label for="new_project_name">Project Name</label>
-                <input class="text long-field" type="text" id="new_project_name" name="new_project_name" title="Project Name">
-            </div>
-        </div>
-        <footer class="aui-dialog2-footer">
-            <div class="aui-dialog2-footer-actions">
-                <button id="new_project_dialog_submit_button" class="aui-button aui-button-primary">Create</button>
-                <button id="new_project_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
-            </div>
-        </footer>
-    </section>
-
-    <section role="dialog" id="new_folder_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
-        <header class="aui-dialog2-header">
-            <h2 class="aui-dialog2-header-main">Create Folder</h2>
-            <a class="aui-dialog2-header-close">
-                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
-            </a>
-        </header>
-        <div class="aui-dialog2-content">
-            <div class="field-group">
-                <label for="new_folder_name">Folder Name</label>
-                <input class="text long-field" type="text" id="new_folder_name" name="new_folder_name" title="Folder Name">
-            </div>
-        </div>
-        <footer class="aui-dialog2-footer">
-            <div class="aui-dialog2-footer-actions">
-                <button id="new_folder_dialog_submit_button" class="aui-button aui-button-primary">Create</button>
-                <button id="new_folder_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
-            </div>
-        </footer>
-    </section>
-
-    <section role="dialog" id="import_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
-        <header class="aui-dialog2-header">
-            <h2 class="aui-dialog2-header-main">Import Project</h2>
-            <a class="aui-dialog2-header-close">
-                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
-            </a>
-        </header>
-        <div class="aui-dialog2-content">
-            <div class="field-group">
-                <label for="import_file">Select the project to import</label>
-                <input class="upfile" id="import_file" type="file" Title="Select the project to import" />
-            </div>
-        </div>
-        <footer class="aui-dialog2-footer">
-            <div class="aui-dialog2-footer-actions">
-                <button id="import_dialog_submit_button" class="aui-button aui-button-primary">Import</button>
-                <button id="import_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
-            </div>
-        </footer>
-    </section>
-
-    <section role="dialog" id="export_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
-        <header class="aui-dialog2-header">
-            <h2 class="aui-dialog2-header-main">Export Project</h2>
-            <a class="aui-dialog2-header-close">
-                <span class="aui-icon aui-icon-small aui-iconfont-close-dialog">Close</span>
-            </a>
-        </header>
-        <div class="aui-dialog2-content">
-            <fieldset class="group">
-                <legend><span>Export project as</span></legend>
-                <div class="radio ml-20">
-                    <input class="radio" type="radio" checked="checked" name="export_type" id="export_machine_readable">
-                    <label for="export_machine_readable">machine-readable</label>
-                </div>
-                <div class="radio ml-20">
-                    <input class="radio" type="radio" name="export_type" id="export_human_readable">
-                    <label for="export_human_readable">human-readable</label>
-                    <select class="select ml-20" id="export_filetype" name="export_filetype" title="File type">
-                        <option>pdf</option>
-                        <option>docx</option>
-                        <option>odt</option>
-                        <option>txt</option>
-                    </select>
-                </div>
-            </fieldset>
-        </div>
-        <footer class="aui-dialog2-footer">
-            <div class="aui-dialog2-footer-actions">
-                <button id="export_dialog_submit_button" class="aui-button aui-button-primary">Export</button>
-                <button id="export_dialog_close_button" class="aui-button aui-button-default">Cancel</button>
-            </div>
-        </footer>
-    </section>
+    {% include "addon/dialogs/newProjectDialog.html" %}
+    {% include "addon/dialogs/newFolderDialog.html" %}
+    {% include "addon/dialogs/importDialog.html" %}
+    {% include "addon/dialogs/exportDialog.html" %}
 
     <script src="/static/addon/javascripts/main.js" id="connect-loader" data-options="sizeToParent:true;"></script>
 </body>
