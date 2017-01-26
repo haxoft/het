@@ -4,110 +4,25 @@
     {% include "addon/head.html" %}
 </head>
 <body>
-    <section id="content">
+<section id="content">
 
-        {% include "addon/sidebar.html" %}
+    {% include "addon/sidebar.html" %}
 
-        <div class="aui-page-panel">
-            <div class="aui-page-panel-inner">
-                <section class="">
-                    <nav class="aui-header aui-dropdown2-trigger-group mb-10" role="navigation" data-aui-responsive="true">
-                        <div class="aui-header-primary">
-                            <ul class="aui-nav __skate" style="width: auto;">
-                                <li>
-                                    <button class="aui-button aui-button-primary aui-dropdown2-trigger aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left
-                                        aui-alignment-out-of-bounds aui-alignment-out-of-bounds-bottom aui-alignment-element-attached-top aui-alignment-element-attached-left
-                                        aui-alignment-target-attached-bottom aui-alignment-target-attached-left mt-5 mb-5 auto-height" aria-haspopup="true" resolved=""
-                                        aria-controls="new_button_more" aria-expanded="false">
-                                        <span class="font-size-150 glyphicon glyphicon-plus"></span><br/>
-                                        New
-                                    </button>
-                                    <div id="new_button_more" class="aui-dropdown2 aui-style-default aui-layer aui-alignment-element aui-alignment-side-bottom
-                                        aui-alignment-snap-left aui-alignment-abutted aui-alignment-abutted-left aui-alignment-out-of-bounds aui-alignment-out-of-bounds-bottom
-                                        aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom
-                                        aui-alignment-target-attached-left" resolved="" aria-hidden="true" data-aui-alignment="bottom auto" data-aui-alignment-static="true"
-                                        style="z-index: auto; top: 0px; left: 0px; position: absolute; transform: translateX(341px) translateY(690px) translateZ(0px);">
-                                        <ul class="aui-list-truncate cursor-pointer">
-                                            <li><a id="new_project_button" tabindex="-1">Project</a></li>
-                                            <li><a id="new_folder_button" tabindex="-1">Folder</a></li>
-                                        </ul>
-                                    </div>
-                                </li>
-                                <li>
-                                    <button id="import_button" class="aui-button aui-button-primary mt-5 mb-5 auto-height">
-                                        <span class="font-size-150 glyphicon glyphicon-import"></span><br/>
-                                        Import
-                                    </button>
-                                </li>
-                                <li>
-                                    <button id="export_button" class="aui-button aui-button-primary mt-5 mb-5 auto-height">
-                                        <span class="font-size-150 glyphicon glyphicon-import"></span><br/>
-                                        Export
-                                    </button>
-                                </li>
-                                <li>
-                                    <button id="run_analysis_button" class="aui-button aui-button-primary mt-5 mb-5 auto-height">
-                                        <span class="font-size-150 glyphicon glyphicon-triangle-right"></span><br/>
-                                        Run Analysis
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    </nav>
-                    <div class="aui-tabs horizontal-tabs mt-0">
-                        <ul class="tabs-menu">
-                            <li class="menu-item active-tab">
-                                <a href="#tabs-example-first">EU_LEDS_2014 - Documents</a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="#tabs-example-second">EU_LEDS_2014 - Requirements</a>
-                            </li>
-                        </ul>
-                        <div class="tabs-pane active-pane" id="tabs-example-first">
-                            <div class="mb-10">
-                                <form class="aui pt-10 mb-neg-20">
-                                    <div class="field-group">
-                                        <label for="section_1_name" class="pt-0"><h3>Section</h3></label>
-                                        <input class="text" type="text" id="section_1_name" name="section_1_name" title="Section Name">
-                                        <h3>Projects content:</h3>
-                                        {{ user_projects_list }}
-                                        <h3>Folders content:</h3>
-                                        {{ user_folders_list }}
-                                    </div>
-                                </form>
-                                <table id="documents_table"></table>
-                            </div>
-                            <button class="aui-button">
-                                <span class="aui-icon aui-icon-small aui-iconfont-add"></span>
-                                Add Section
-                            </button>
-                        </div>
-                        <div class="tabs-pane" id="tabs-example-second">
-                            <form class="aui mt-20" id="requirements">
-                                <script type="text/template" id="requirement_template">
-                                    <div class="field-group">
-                                        <label for="<%= name %>_values"><%= name %></label>
-                                        <div name="<%= name %>_values">
-                                            <% _.each(values, function(value) { %>
-                                                <textarea class="text long-field" type="text" id="<%= name %>" name="<%= name %>" title="<%= name %>"><%= value %></textarea>
-                                                <br/>
-                                            <% }); %>
-                                        </div>
-                                    </div>
-                                </script>
-                            </form>
-                        </div>
-                    </div>
-                </section>
-            </div>
+    <div class="aui-page-panel">
+        <div class="aui-page-panel-inner">
+            <section class="">
+                {% include "addon/mainmenu.html" %}
+                {% include "addon/maincontent.html" %}
+            </section>
         </div>
-    </section>
-    
-    {% include "addon/dialogs/newProjectDialog.html" %}
-    {% include "addon/dialogs/newFolderDialog.html" %}
-    {% include "addon/dialogs/importDialog.html" %}
-    {% include "addon/dialogs/exportDialog.html" %}
+    </div>
+</section>
 
-    <script src="/static/addon/javascripts/main.js" id="connect-loader" data-options="sizeToParent:true;"></script>
+{% include "addon/dialogs/newprojectdialog.html" %}
+{% include "addon/dialogs/newfolderdialog.html" %}
+{% include "addon/dialogs/importdialog.html" %}
+{% include "addon/dialogs/exportdialog.html" %}
+
+<script src="/static/addon/javascripts/main.js" id="connect-loader" data-options="sizeToParent:true;"></script>
 </body>
 </html>
