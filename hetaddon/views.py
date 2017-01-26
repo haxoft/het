@@ -1,8 +1,9 @@
 from django.shortcuts import render
-from .models import Folder, Project, User, Membership, Document, Requirement, DocumentCategory, Section
+from .models import *
 from django.utils import timezone
-from django.http import HttpResponse
+from django.http import *
 from django.core import serializers
+import psycopg2
 
 #  nasty, remove
 mocked = False
@@ -35,43 +36,41 @@ def index(request):
     return render(request, 'addon/index.html', context)
 
 
-# this works
-def folders(request):
+def get_folders_json(request):
+    folders_list = list(Folder.objects.all())
+    folders_list.sort(key=lambda folder: folder.pk)
+    folders_dict = {i: {"name": folders_list[i].name, "parent_folder": folders_list[i].parent_folder}
+                    for i in range(0, len(folders_list))}
+    return JsonResponse(folders_dict)
 
-    fldrs_json = serializers.serialize('json', Folder.objects.all())
-    return HttpResponse(fldrs_json, content_type='json')
+    # old code from luis, i (valle) wouldn't take it due overhead of information in json
+    # fldrs_json = serializers.serialize('json', Folder.objects.all())
+    # return HttpResponse(fldrs_json, content_type='json')
 
 
-# here we are returning folders, instead of projects - remove?
-def projects(request):
+def get_projects_json(request):
+    projects_list = list(Project.objects.all())
+    projects_list.sort(key=lambda project: project.pk)
+    projects_dict = {i: {"name": projects_list[i].name, "folder": projects_list[i].folder.name}
+                     for i in range(0, len(projects_list))}
+    return JsonResponse(projects_dict)
 
-    folders = Folder.objects.all()
-    result = "["
-    for folder in folders:
-        result += "{\"id\":42, \"name\":\"" + folder.name + "\", \"folders\": [], \"projects\": []},"
-    result = result[0:-1]
-    result += "]"
-    return HttpResponse(result)
 
-#fkn bad, pls rewrite after demo
-def projectRequirements(request, id):
-    requirements = Requirement.objects.all()
-    result = "["
-    for requirement in requirements:
-        result += "{\"id\":42, \"name\":\"" + requirement.name + "\", \"value\":[\"" + requirement.value + "\"]},"
-    result = result[0:-1]
-    result += "]"
-    return HttpResponse(result)
+def get_requirements_of_project_json(request, id):
+    requirements_list = list(Requirement.objects.filter(project_id=id))
+    requirements_list.sort(key=lambda req: req.pk)
+    requirements_dict = {i: {'name': requirements_list[i].name, "value": requirements_list[i].value,
+                             "document": requirements_list[i].document_id} for i in range(0, len(requirements_list))}
+    return JsonResponse(requirements_dict)
 
-#fkn bad, pls rewrite after demo
-def projectDocuments(request, id):
-    documents = Document.objects.all()
-    result = "["
-    for document in documents:
-        result += "{\"id\":42, \"name\":\"" + document.name + "\", \"type\":\"" + document.type + "\", \"size\":\"0.0\", \"category\":\"Test\"},"
-    result = result[0:-1]
-    result += "]"
-    return HttpResponse(result)
+
+def get_documents_of_project_json(request, id):
+    documents_list = list(Requirement.objects.filter(project_id=id))
+    documents_list.sort(key=lambda req: req.pk)
+    documents_dict = {i: {'name': documents_list[i].name, "type": documents_list[i].type,
+                          "status": documents_list[i].status, "category_id": documents_list[i].category_id,
+                          "section": documents_list[i].section_id} for i in range(0, len(documents_list))}
+    return JsonResponse(documents_dict)
 
 
 def mock_data():
@@ -102,13 +101,32 @@ def mock_data():
 def clear_db():
 
     print("Clearing DB")
-    Folder.objects.all().delete()
-    Project.objects.all().delete()
-    User.objects.all().delete()
     Document.objects.all().delete()
+    DocumentCategory.objects.all().delete()
+    ExternalPlatform.objects.all().delete()
+    Folder.objects.all().delete()
+    Membership.objects.all().delete()
+    Project.objects.all().delete()
     Requirement.objects.all().delete()
     Section.objects.all().delete()
-    DocumentCategory.objects.all().delete()
+    User.objects.all().delete()
+
+    try:
+        db_connection = psycopg2.connect("dbname='hetdb' user='postgres' host='localhost' password='postgres'")
+    except:
+        print("I am unable to connect to the database")
+
+    db_cursor = db_connection.cursor()
+    
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_document_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_documentcategory_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_externalplatform_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_folder_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_membership_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_project_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_requirement_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_section_id_seq RESTART WITH 1""")
+    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_user_id_seq RESTART WITH 1""")
 
 
 

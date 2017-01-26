@@ -5,8 +5,8 @@ from . import views
 urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^index$', views.index, name='index'),
-    url(r'^api/projects$', views.projects, name='projects'),
-    url(r'^api/folders', views.folders, name='folders'),
-    url(r'^api/projects/(?P<id>[0-9]+)/documents$', views.projectDocuments, name='projectDocuments'),
-    url(r'^api/projects/(?P<id>[0-9]+)/requirements$', views.projectRequirements, name='projectRequirements')
+    url(r'^api/projects$', views.get_projects_json, name='projects'),
+    url(r'^api/folders', views.get_folders_json, name='folders'),
+    url(r'^api/projects/(?P<id>[0-9]+)/documents$', views.get_documents_of_project_json, name='projectDocuments'),
+    url(r'^api/projects/(?P<id>[0-9]+)/requirements$', views.get_requirements_of_project_json, name='projectRequirements')
 ]
