@@ -76,7 +76,7 @@ def projectDocuments(request, id):
 def mock_data():
 
     clear_db()
-    print("Mocking fake data into DB")
+    print("Mocking Data")
 
     eu_comm_folder = Folder.objects.create(name="European Commission", parent_folder=None)
     Folder.objects.create(name="Deutsche Forschungsgemeinschaft", parent_folder=None)
@@ -85,18 +85,17 @@ def mock_data():
     user = User.objects.create(name="username", email="mail@mail.com")
 
     eu_leds_project = Project.objects.create(name="EU_LEDS_2014", created=timezone.now(), folder=eu_comm_folder)
-    Project.objects.create(name="EU_IOT_2010", created=timezone.now(), folder=eu_comm_folder)
-    Project.objects.create(name="EU_H2020_2012", created=timezone.now(), folder=eu_comm_folder)
+    eu_iot_project = Project.objects.create(name="EU_IOT_2010", created=timezone.now(), folder=eu_comm_folder)
+    eu_h2020_project = Project.objects.create(name="EU_H2020_2012", created=timezone.now(), folder=eu_comm_folder)
     
     some_category = DocumentCategory.objects.create(name="Some Category")
     eu_leds_section_general = Section.objects.create(name="General", project=eu_leds_project)
     eu_leds_doc_call = Document.objects.create(name="Call.pdf", type="pdf", status="None", section=eu_leds_section_general, category=some_category)
     Requirement.objects.create(name="Title", value="Innovating SMEs", project=eu_leds_project, document=eu_leds_doc_call)
 
-    # eu_leds_project.members.add(user)
-    # eu_leds_project.save()
-
-    return None
+    Membership.objects.create(user=user, project=eu_leds_project)
+    Membership.objects.create(user=user, project=eu_iot_project)
+    Membership.objects.create(user=user, project=eu_h2020_project)
 
 
 def clear_db():
