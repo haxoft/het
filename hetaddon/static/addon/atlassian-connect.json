@@ -1,8 +1,8 @@
 {
-     "name": "HET",
+     "name": "HXT",
      "description": "Haxoft Extraction Tool",
-     "key": "de.haxoft.het",
-     "baseUrl": "https://7c7a967d.ngrok.io",
+     "key": "de.haxoft.hxt",
+     "baseUrl": "https://25fc1bc0.ngrok.io/",
      "vendor": {
          "name": "Haxoft",
          "url": "http://haxoft.de"
@@ -14,11 +14,11 @@
      "modules": {
          "generalPages": [
              {
-                 "url": "/het/",
+                 "url": "/hxt/",
                  "key": "het-index",
                  "location": "system.top.navigation.bar",
                  "name": {
-                     "value": "HET"
+                     "value": "HXT"
                  }
              }
          ]

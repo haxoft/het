@@ -18,5 +18,5 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^het/', include('hetaddon.urls'))
+    url(r'^hxt/', include('hetaddon.urls'))
 ]

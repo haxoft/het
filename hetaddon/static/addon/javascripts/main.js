@@ -235,7 +235,7 @@ function initProjects() {
         _.each(folderArr, function(folderObj) {
             var subFolders = parseFolderList(folderObj.folders);
             var projects = parseProjectList(folderObj.projects);
-            var folder = new app.Folder({id: folderObj.id, name: folderObj.name, folders: subFolders, projects});
+            var folder = new app.Folder({id: folderObj.id, name: folderObj.name, folders: subFolders, projects: projects});
             result.add(folder);
         });
         return result;
