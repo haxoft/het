@@ -28,24 +28,40 @@ def index(request):
         'user_projects_list': user_projects_list,
     }
 
-    print("Sending projects:")
-    print(*user_projects_list, sep=', ')
-    print("Sending folders:")
-    print(*user_folders_list, sep=', ')
-
     return render(request, 'addon/index.html', context)
 
 
 def get_folders_json(request):
     folders_list = list(Folder.objects.all())
     folders_list.sort(key=lambda folder: folder.pk)
-    folders_dict = {i: {"name": folders_list[i].name, "parent_folder": folders_list[i].parent_folder}
-                    for i in range(0, len(folders_list))}
-    return JsonResponse(folders_dict)
+    folders_dict = flatten_folders(folders_list)
 
-    # old code from luis, i (valle) wouldn't take it due overhead of information in json
-    # fldrs_json = serializers.serialize('json', Folder.objects.all())
-    # return HttpResponse(fldrs_json, content_type='json')
+    # prev. version
+    # folders_dict = {i: {"name": folders_list[i].name, "parent_folder": folders_list[i].parent_folder}
+    #                 for i in range(0, len(folders_list))}
+
+    return JsonResponse(folders_dict, safe=False)
+
+
+def get_subfolders(folders, folder_id):
+
+    subfolders = []
+    for folder in folders:
+        parent = folder.parent_folder
+        if parent is not None and parent.id == folder_id:
+            subfolders.append({"id": folder.id, "name": folder.name})
+    return subfolders
+
+
+def flatten_folders(folders):
+
+    folders_dict = []
+    for folder in folders:
+        subfs = get_subfolders(folders, folder.id)
+        # projs = getProjects(folder.id)
+        folders_dict.append({"id": folder.id, "name": folder.name, "folders": subfs})
+
+    return folders_dict
 
 
 def get_projects_json(request):
@@ -78,9 +94,10 @@ def mock_data():
     clear_db()
     print("Mocking Data")
 
-    eu_comm_folder = Folder.objects.create(name="European Commission", parent_folder=None)
-    Folder.objects.create(name="Deutsche Forschungsgemeinschaft", parent_folder=None)
-    Folder.objects.create(name="Deutscher Akademischer Austauschdienst ", parent_folder=None)
+    root_folder = Folder.objects.create(name="Projects", parent_folder=None)
+    eu_comm_folder = Folder.objects.create(name="European Commission", parent_folder=root_folder)
+    Folder.objects.create(name="Deutsche Forschungsgemeinschaft", parent_folder=root_folder)
+    Folder.objects.create(name="Deutscher Akademischer Austauschdienst ", parent_folder=root_folder)
 
     user = User.objects.create(name="username", email="mail@mail.com")
 
