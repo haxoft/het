@@ -2,7 +2,7 @@ from django.shortcuts import render
 from .models import *
 from django.utils import timezone
 from django.http import *
-from django.core import serializers
+import json
 import psycopg2
 
 #  nasty, remove
@@ -40,11 +40,20 @@ def get_folders_json(request):
     return JsonResponse(folders_dict, safe=False)
 
 
-def project_handler(request):
+def project_handler(request, id = None):
     if request.method == 'GET':
+        if id:
+            return get_project_json(request, id)
         return get_projects_json(request)
     elif request.method == 'POST':
+        if id:
+            return HttpResponseBadRequest();
         return post_project(request)
+    elif request.method == 'PUT':
+        return put_project(request, id)
+    elif request.method == 'DELETE':
+        return delete_project(request, id)
+    return HttpResponseBadRequest()
 
 
 def get_projects_json(request):
@@ -55,8 +64,47 @@ def get_projects_json(request):
     return JsonResponse(projects_dict)
 
 
+def delete_project(request, id):
+    project = Project.objects.get(pk=id)
+    if project:
+        project.delete()
+        return HttpResponse("Ok")
+    return HttpResponseNotFound()
+
+
+def get_project_json(request, id):
+    project = Project.objects.get(pk=id)
+    project_dict = {project.pk: {"name": project.name, "folder": project.folder.name}}
+    return JsonResponse(project_dict)
+
+
 def post_project(request):
-    pass
+    body_unicode = request.body.decode('utf-8')
+    data = json.loads(body_unicode)
+    if not data["name"] or not data["folder_id"]:
+        return HttpResponseBadRequest()
+    folder = Folder.objects.get(pk=data["folder_id"])
+    if not folder:
+        return HttpResponseBadRequest()
+    Project.objects.create(name=data["name"], created=timezone.now(), folder=folder)
+    return HttpResponse("Created")
+
+
+def put_project(request, id):
+    body_unicode = request.body.decode('utf-8')
+    data = json.loads(body_unicode)
+    project = Project.objects.get(pk=id)
+    if not project:
+        return HttpResponseNotFound()
+    if not data["name"] or not data["folder_id"]:
+        return HttpResponseBadRequest()
+    folder = Folder.objects.get(pk=data["folder-id"])
+    if not folder:
+        return HttpResponseBadRequest()
+    project.folder = folder
+    project.name = data["name"]
+    project.save()
+    return HttpResponse("Updated")
 
 
 def add_projects_to_folder_structure(list, project_set):
