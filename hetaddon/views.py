@@ -34,34 +34,17 @@ def index(request):
 def get_folders_json(request):
     folders_list = list(Folder.objects.all())
     folders_list.sort(key=lambda folder: folder.pk)
-    folders_dict = flatten_folders(folders_list)
-
-    # prev. version
-    # folders_dict = {i: {"name": folders_list[i].name, "parent_folder": folders_list[i].parent_folder}
-    #                 for i in range(0, len(folders_list))}
+    folders_dict = {i: {"name": folders_list[i].name, "parent_folder": folders_list[i].parent_folder}
+                    for i in range(0, len(folders_list))}
 
     return JsonResponse(folders_dict, safe=False)
 
 
-def get_subfolders(folders, folder_id):
-
-    subfolders = []
-    for folder in folders:
-        parent = folder.parent_folder
-        if parent is not None and parent.id == folder_id:
-            subfolders.append({"id": folder.id, "name": folder.name})
-    return subfolders
-
-
-def flatten_folders(folders):
-
-    folders_dict = []
-    for folder in folders:
-        subfs = get_subfolders(folders, folder.id)
-        # projs = getProjects(folder.id)
-        folders_dict.append({"id": folder.id, "name": folder.name, "folders": subfs})
-
-    return folders_dict
+def project_handler(request):
+    if request.method == 'GET':
+        return get_projects_json(request)
+    elif request.method == 'POST':
+        return post_project(request)
 
 
 def get_projects_json(request):
@@ -70,6 +53,63 @@ def get_projects_json(request):
     projects_dict = {i: {"name": projects_list[i].name, "folder": projects_list[i].folder.name}
                      for i in range(0, len(projects_list))}
     return JsonResponse(projects_dict)
+
+
+def post_project(request):
+    pass
+
+
+def add_projects_to_folder_structure(list, project_set):
+    for project in project_set:
+        project_dict = {"id": project.pk, "name": project.name, "requirementsExtracted": False}
+        if project.requirement_set.all():
+            project_dict["requirementsExtracted"] = True
+        list.append(project_dict)
+
+
+def add_folders_to_folder_structure(list, folder_set):
+    for folder in folder_set:
+        folder_dict = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
+        project_set = folder.project_set.all()
+        subfolder_set = folder.folder_set.all()
+        if project_set:
+            add_projects_to_folder_structure(folder_dict.get("projects"), project_set)
+        if subfolder_set:
+            add_folders_to_folder_structure(folder_dict.get("folders"), subfolder_set)
+        list.append(folder_dict)
+
+
+def get_folderstructure_json(request, id=None):
+    result = []
+    if id:
+        project = list(Project.objects.filter(pk=id))
+        projects_path = (list(Folder.objects.filter(pk=project[0].folder_id)))
+        while projects_path[-1].parent_folder_id is not None:
+            projects_path.extend(list(Folder.objects.filter(pk=projects_path[-1].parent_folder_id)))
+        folder = projects_path.pop()
+        result = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
+        folders_array = result.get("folders")
+        while projects_path:
+            folder = projects_path.pop()
+            temp = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
+            folders_array.append(temp)
+            folders_array = temp.get("folders")
+            project_list = temp.get("projects")
+        add_projects_to_folder_structure(project_list, project)
+    else:
+        top_folders = list(Folder.objects.filter(parent_folder=None))
+        top_folders.sort(key=lambda f: f.pk)
+        for folder in top_folders:
+            folder_dict = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
+            project_set = folder.project_set.all()
+            folder_set = folder.folder_set.all()
+            if project_set:
+                add_projects_to_folder_structure(folder_dict.get("projects"), project_set)
+            if folder_set:
+                add_folders_to_folder_structure(folder_dict.get("folders"), folder_set)
+            result.append(folder_dict)
+
+    return JsonResponse(result, safe=False)
 
 
 def get_requirements_of_project_json(request, id):
