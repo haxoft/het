@@ -10,9 +10,13 @@ class User(models.Model):
 
 
 class ExternalPlatform(models.Model):
-    platform_id = models.IntegerField()  # is nullable?
-    platform_name = models.CharField(max_length=128)
-    user_ext_id = models.IntegerField()
+    PLATFORMS = (
+        ('atl', 'Atlassian'),
+        ('fac', 'Facebook'),
+        ('goo', 'Google')
+    )
+    platform_name = models.CharField(max_length=3, choices=PLATFORMS)
+    user_ext_id = models.CharField(max_length=128)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -52,7 +56,7 @@ class Membership(models.Model):
 class Document(models.Model):
     name = models.CharField(max_length=128)
     type = models.CharField(max_length=128)
-    size = models.FloatField
+    size = models.IntegerField(default=0)
     status = models.CharField(max_length=128)
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
     category = models.ForeignKey('DocumentCategory', on_delete=models.CASCADE)
@@ -61,7 +65,7 @@ class Document(models.Model):
 class Requirement(models.Model):
     name = models.CharField(max_length=128)
     value = models.CharField(max_length=300)  # Is this enough?
-    disabled = models.BooleanField
+    disabled = models.BooleanField(default=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
 
