@@ -54,12 +54,18 @@ class Membership(models.Model):
 
 
 class Document(models.Model):
+    CATEGORIES = (
+        ('cal', 'Call for Proposal'),
+        ('rul', 'Rules/Limitations'),
+        ('tem', 'Template'),
+        ('oth', 'Other')
+    )
     name = models.CharField(max_length=128)
     type = models.CharField(max_length=128)
     size = models.IntegerField(default=0)
     status = models.CharField(max_length=128)
+    category = models.CharField(max_length=3, choices=CATEGORIES)
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
-    category = models.ForeignKey('DocumentCategory', on_delete=models.CASCADE)
 
 
 class Requirement(models.Model):
@@ -68,19 +74,4 @@ class Requirement(models.Model):
     disabled = models.BooleanField(default=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
-
-
-class DocumentCategory(models.Model):
-    name = models.CharField(max_length=128)
-
-
-
-
-
-
-
-
-
-
-
 
