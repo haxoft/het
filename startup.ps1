@@ -10,5 +10,5 @@ Write-Output $ngrokUrl
 $ngrokUrlWithoutProtocol = $ngrokUrl -replace 'https://', ''
 (Get-Content ./HET/settings.py) | ForEach-Object { $_ -replace '(?<=ALLOWED_HOSTS = \[").*?(?="\])', $ngrokUrlWithoutProtocol } | Set-Content ./HET/settings.py
 Set-Clipboard -Value "$ngrokUrl/static/addon/atlassian-connect.json"
-start-process powershell.exe -argument '-nologo -noprofile -executionpolicy bypass -command cd $PSScriptRoot; ./manage.py runserver 8000'
+start-process powershell.exe -argument '-nologo -noprofile -executionpolicy bypass -command cd $PSScriptRoot; python manage.py runserver 8000'
 Read-Host -Prompt "Press Enter to exit"
