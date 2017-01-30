@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from .models import *
 from .data import *
 from django.utils import timezone
 from django.http import *
