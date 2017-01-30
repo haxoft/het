@@ -189,7 +189,7 @@ def post_folder(request):
     if not parent:
         return HttpResponseBadRequest()
     Folder.objects.create(name=data["name"], created=timezone.now(), parent_folder=parent)
-    return HttpResponse("Created")
+    return HttpResponse("Created", status=201)
 
 
 def put_folder(request, id):
@@ -206,14 +206,14 @@ def put_folder(request, id):
             return HttpResponseBadRequest()
         folder.parent_folder = parent
     folder.save()
-    return HttpResponse("Updated")
+    return HttpResponse("Updated", status=200)
 
 
 def delete_folder(request, id):
     folder = Folder.objects.get(pk=id)
     if folder:
         folder.delete()
-        return HttpResponse("Ok")
+        return HttpResponse("Deleted", status=200)
     return HttpResponseNotFound()
 
 
@@ -247,7 +247,7 @@ def post_project(request):
     if not folder:
         return HttpResponseBadRequest()
     Project.objects.create(name=data["name"], created=timezone.now(), folder=folder)
-    return HttpResponse("Created")
+    return HttpResponse("Created", status=201)
 
 
 def put_project(request, id):
@@ -264,14 +264,14 @@ def put_project(request, id):
             return HttpResponseBadRequest()
         project.folder = folder
     project.save()
-    return HttpResponse("Updated")
+    return HttpResponse("Updated", status=200)
 
 
 def delete_project(request, id):
     project = Project.objects.get(pk=id)
     if project:
         project.delete()
-        return HttpResponse("Ok")
+        return HttpResponse("Deleted", status=200)
     return HttpResponseNotFound()
 
 
@@ -304,7 +304,7 @@ def post_document(request):
     Document.objects.create(name=data["name"], type=data["type"], size=data["size"], status="None",
                             category=data["category"],
                             content=binary_content, section=section)
-    return HttpResponse("Created")
+    return HttpResponse("Created", status=201)
 
 
 def put_document(request, id):
@@ -327,14 +327,14 @@ def put_document(request, id):
             return HttpResponseBadRequest()
         document.section = section
     document.save()
-    return HttpResponse("Updated")
+    return HttpResponse("Updated", status=200)
 
 
 def delete_document(request, id):
     document = Document.objects.get(pk=id)
     if document:
         document.delete()
-        return HttpResponse("Ok")
+        return HttpResponse("Deleted", status=200)
     return HttpResponseNotFound()
 
 
@@ -372,7 +372,7 @@ def post_requirement(request):
     if not project:
         return HttpResponseBadRequest()
     Requirement.objects.create(name=data["name"], values=data["values"], project=project)
-    return HttpResponse("Created")
+    return HttpResponse("Created", status=201)
 
 
 def put_requirement(request, id):
@@ -388,14 +388,14 @@ def put_requirement(request, id):
     if data["disabled"]:
         requirement.disabled = data["disabled"]
     requirement.save()
-    return HttpResponse("Updated")
+    return HttpResponse("Updated", status=200)
 
 
 def delete_requirement(request, id):
     requirement = Requirement.objects.get(pk=id)
     if requirement:
         requirement.delete()
-        return HttpResponse("Ok")
+        return HttpResponse("Deleted", status=200)
     return HttpResponseNotFound()
 
 

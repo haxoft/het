@@ -9,6 +9,11 @@ function showErrorMessage(message) {
     console.error(message);
 }
 
+function showConfirmationMessage(message, callback) {
+    alert(message);
+    callback();
+}
+
 function expandCollapse(element) {
     var self = $(element);
     self.siblings().toggle();
@@ -38,10 +43,10 @@ function uploadDocument(element) {
             $.ajax({
                 url: apiUrlPrefix + "documents",
                 method: "POST",
-                dataType: "application/json",
-                data: data,
+                data: JSON.stringify(data),
                 success: function(response) {
                     showSuccessMessage("The Document was uploaded successfully");
+                    app.documents.fetch();
                 },
                 error: function(xhr, status, err) {
                     showErrorMessage("The document could not be uploaded, please try again or contact our webmaster.");
@@ -52,17 +57,35 @@ function uploadDocument(element) {
             showErrorMessage("Could not read document file.")
         };
     }
-    var data = {
+}
 
-    };
+function deleteDocument(documentId) {
+    showConfirmationMessage("Delete this document?", function(){
+        app.documents.remove(documentId);
+    });
 }
 
 function addSection() {
-
+    var data = {
+        name:"New Section",
+        project_id:1
+    }
+    $.ajax({
+        url: apiUrlPrefix + "sections",
+        method: "POST",
+        data: JSON.stringify(data),
+        success: function(response) {
+            showSuccessMessage("The Section was created successfully");
+            app.documents.fetch();
+        },
+        error: function(xhr, status, err) {
+            showErrorMessage("The section could not be created, please try again or contact our webmaster.");
+        }
+    });
 }
 
 (function() {
-    var getUrlParam = function (param) {
+    /*var getUrlParam = function (param) {
         var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
         return decodeURIComponent(codedParam);
     };
@@ -74,7 +97,7 @@ function addSection() {
         script.setAttribute('data-options', options);
     }
 
-    document.getElementsByTagName("head")[0].appendChild(script);
+    document.getElementsByTagName("head")[0].appendChild(script);*/
 
     initDocumentTable();
     initNewProjectDialog();
@@ -84,44 +107,68 @@ function addSection() {
     initRunAnalysis();
     initProjects();
     initRequirements();
+
+    setInterval(function(){
+        app.projectFolders.fetch();
+        app.requirements.fetch();
+        app.documents.fetch();
+    },15000);
 })();
 
 function initDocumentTable() {
-    var documentTable = new AJS.RestfulTable({
-        autoFocus: true,
-        el: jQuery("#documents_table"),
-        resources: {
-            all: apiUrlPrefix + "projects/1/documents",
-            self: apiUrlPrefix + "documents"
+    app.Document = Backbone.Model.extend({
+        defaults: {
+            id: 0,
+            name: "",
+            type: "",
+            size: 0,
+            category: "oth"
         },
-        columns: [
-            {
-                id: "name",
-                header: "Name",
-                allowEdit: true
-            },
-            {
-                id: "type",
-                header: "Type",
-                allowEdit: false
-            },
-            {
-                id: "size",
-                header: "Size",
-                allowEdit: false
-            },
-            {
-                id: "category",
-                header: "Category",
-                allowEdit: true
-            }
-        ],
-        allowCreate: false,
-        allowEdit: true,
-        allowDelete: true,
-        createPosition: "bottom",
-        deleteConfirmation: true
+        url: apiUrlPrefix + "documents"
     });
+
+    app.DocumentList = Backbone.Collection.extend({
+        model: app.Document,
+        url: apiUrlPrefix + "projects/1/documents"
+    });
+
+    function parseDocumentList(documentArr) {
+        var result = new app.DocumentList([]);
+        _.each(documentArr, function(documentObj) {
+            var document = new app.Document({id: documentObj.id, name: documentObj.name, type: documentObj.type,
+                size: documentObj.size, category: documentObj.category});
+            result.add(document);
+        });
+        return result;
+    }
+
+    app.DocumentsView = Backbone.View.extend({
+        el: "#document_table_rows",
+
+        initialize: function(){
+            var self = this;
+            $.ajax({
+                url: apiUrlPrefix + "projects/1/documents",
+                method: "GET",
+                success: function(response) {
+                    app.documents = parseDocumentList(response);
+                    app.documents.on('reset',self.render(),self);
+                    self.render();
+                }
+            });
+        },
+
+        render: function(){
+            app.DocumentRowTemplate = _.template($("#document_row_template").html());
+            var result = "";
+            app.documents.each(function(document) {
+                result += app.DocumentRowTemplate(document.attributes);
+            });
+            this.$el.html(result);
+        }
+    });
+
+    new app.DocumentsView();
 }
 
 function initNewProjectDialog() {
@@ -303,6 +350,7 @@ function initProjects() {
                 method: "GET",
                 success: function(response) {
                     app.projectFolders = parseFolderList(response);
+                    app.projectFolders.on('reset',self.render(),self);
                     self.render();
                 }
             });
@@ -332,7 +380,7 @@ function initRequirements() {
 
     app.RequirementList = Backbone.Collection.extend({
         model: app.Requirement,
-        url: apiUrlPrefix + "requirements"
+        url: apiUrlPrefix + "projects/1/requirements"
     });
 
     function parseRequirementList(requirementArr) {
@@ -356,6 +404,7 @@ function initRequirements() {
                 method: "GET",
                 success: function(response) {
                     app.requirements = parseRequirementList(response);
+                    app.requirements.on('reset',self.render(),self);
                     self.render();
                 }
             });

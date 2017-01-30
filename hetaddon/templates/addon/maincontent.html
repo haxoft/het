@@ -15,7 +15,32 @@
                     <input class="text" type="text" id="section_1_name" name="section_1_name" title="Section Name">
                 </div>
             </form>
-            <table id="documents_table"></table>
+            <table id="documents_table" class="aui">
+                <thead>
+                    <tr>
+                        <th id="name">Name</th>
+                        <th id="type">Type</th>
+                        <th id="size">Size</th>
+                        <th id="category">Category</th>
+                        <th id="remove"></th>
+                    </tr>
+                </thead>
+                <tbody id="document_table_rows">
+                </tbody>
+                <script type="text/template" id="document_row_template">
+                    <tr>
+                        <td header="name"><%= name %></td>
+                        <td header="type"><%= type %></td>
+                        <td header="size"><%= size %></td>
+                        <td header="category"><%= category %></td>
+                        <td header="remove">
+                            <button class="aui-button" onclick="deleteDocument(<%= id %>)">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                </script>
+            </table>
             <button class="aui-button" onclick="addDocument()">
                 <span class="aui-icon aui-icon-small aui-iconfont-doc"></span>
                 Add Document
@@ -29,17 +54,17 @@
     </div>
     <div class="tabs-pane" id="tabs-example-second">
         <form class="aui mt-20" id="requirements">
-            <script type="text/template" id="requirement_template">
-                <div class="field-group">
-                    <label for="<%= name %>_values"><%= name %></label>
-                    <div name="<%= name %>_values">
-                        <% _.each(values, function(value) { %>
-                        <textarea class="text long-field" type="text" id="<%= name %>" name="<%= name %>" title="<%= name %>"><%= value %></textarea>
-                        <br/>
-                        <% }); %>
-                    </div>
-                </div>
-            </script>
         </form>
+        <script type="text/template" id="requirement_template">
+            <div class="field-group">
+                <label for="<%= name %>_values"><%= name %></label>
+                <div name="<%= name %>_values">
+                    <% _.each(values, function(value) { %>
+                    <textarea class="text long-field" type="text" id="<%= name %>" name="<%= name %>" title="<%= name %>"><%= value %></textarea>
+                    <br/>
+                    <% }); %>
+                </div>
+            </div>
+        </script>
     </div>
 </div>
