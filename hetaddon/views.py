@@ -173,12 +173,12 @@ def add_folders_to_folder_structure(list, folder_set):
 
 
 def get_folders_json(request):
-    folders_list = list(Folder.objects.all())
-    folders_list.sort(key=lambda folder: folder.pk)
-    folders_json_list = [{"name": folders_list[i].name, "parent_folder_id": folders_list[i].parent_folder.id}
-                    for i in range(0, len(folders_list))]
+    folders = list(Folder.objects.all())
+    folders.sort(key=lambda folder: folder.pk)
+    folders_list = [{"name": folders[i].name, "parent_folder_id": folders[i].parent_folder.id}
+                    for i in range(0, len(folders))]
 
-    return JsonResponse(folders_json_list, safe=False)
+    return JsonResponse(folders_list, safe=False)
 
 
 def post_folder(request):
@@ -226,16 +226,16 @@ def delete_folder(request, id):
 
 
 def get_projects_json(request):
-    projects_list = list(Project.objects.all())
-    projects_list.sort(key=lambda project: project.pk)
-    projects_json_list = [{"name": projects_list[i].name, "folder": projects_list[i].folder.name}
-                     for i in range(0, len(projects_list))]
-    return JsonResponse(projects_json_list, safe=False)
+    projects = list(Project.objects.all())
+    projects.sort(key=lambda project: project.pk)
+    projects_list = [{"name": projects[i].name, "folder": projects[i].folder.name}
+                     for i in range(0, len(projects))]
+    return JsonResponse(projects_list, safe=False)
 
 
 def get_project_json(request, id):
     project = Project.objects.get(pk=id)
-    project_dict = {project.pk: {"name": project.name, "folder": project.folder.name}}
+    project_dict = {"name": project.name, "folder": project.folder.name}
     return JsonResponse(project_dict)
 
 
@@ -293,8 +293,8 @@ def get_document_json(request, id):
 def post_document(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not all (k in data for k in ("name","category","content","project_id")):
-        return HttpResponseBadRequest(JsonResponse({"errors":"Fehler"}))
+    if not all(k in data for k in ("name", "category", "content", "project_id", "type", "size")):
+        return HttpResponseBadRequest(JsonResponse({"errors": "Fehler"}))
     project = Project.objects.get(pk=data["project_id"])
     if not project:
         return HttpResponseBadRequest()
@@ -302,7 +302,8 @@ def post_document(request):
     section = project.section_set.first()
     # /temp demo code
     binary_content = binascii.a2b_base64(data["content"])
-    Document.objects.create(name=data["name"], type="pdf", size=1353653, status="None", category=data["category"],
+    Document.objects.create(name=data["name"], type=data["type"], size=data["size"], status="None",
+                            category=data["category"],
                             content=binary_content, section=section)
     return HttpResponse("Created")
 
@@ -357,9 +358,9 @@ def get_documents_of_project_json(request, id):
 
 def get_requirement_json(request, id):
     requirement = Requirement.objects.get(pk=id)
-    requirement_dict = {requirement.pk: {"id": requirement.id, "name": requirement.name,
-                                         "values": [r.value for r in Requirement.objects.all() if r.name == requirement.name],
-                                         "disabled": requirement.disabled}}
+    requirement_dict = {"id": requirement.id, "name": requirement.name,
+                        "values": [r.value for r in Requirement.objects.all() if r.name == requirement.name],
+                        "disabled": requirement.disabled}
     return JsonResponse(requirement_dict)
 
 
@@ -407,6 +408,3 @@ def get_requirements_of_project_json(request, id):
                              "document": requirements_list[i].document_id, "disabled": requirements_list[i].disabled}
                          for i in range(0, len(requirements_list))]
     return JsonResponse(requirements_json_list, safe=False)
-
-
-
