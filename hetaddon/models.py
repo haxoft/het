@@ -65,6 +65,7 @@ class Document(models.Model):
     size = models.IntegerField(default=0)
     status = models.CharField(max_length=128)
     category = models.CharField(max_length=3, choices=CATEGORIES)
+    content = models.BinaryField(null=True)
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
 
 

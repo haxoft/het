@@ -2,6 +2,8 @@ from django.shortcuts import render
 from .models import *
 from django.utils import timezone
 from django.http import *
+from django.views.decorators.csrf import csrf_exempt
+import binascii
 import json
 import psycopg2
 
@@ -31,7 +33,7 @@ def index(request):
     return render(request, 'addon/index.html', context)
 
 
-def folder_handler(request, id = None):
+def folder_handler(request, id=None):
     if request.method == 'GET':
         if id:
             return HttpResponseBadRequest()
@@ -104,8 +106,8 @@ def add_folders_to_folder_structure(list, folder_set):
 def get_folders_json(request):
     folders_list = list(Folder.objects.all())
     folders_list.sort(key=lambda folder: folder.pk)
-    folders_dict = {i: {"name": folders_list[i].name, "parent_folder_id": folders_list[i].parent_folder.id}
-                    for i in range(0, len(folders_list))}
+    folders_dict = [{"name": folders_list[i].name, "parent_folder_id": folders_list[i].parent_folder.id}
+                    for i in range(0, len(folders_list))]
 
     return JsonResponse(folders_dict, safe=False)
 
@@ -147,7 +149,7 @@ def delete_folder(request, id):
     return HttpResponseNotFound()
 
 
-def project_handler(request, id = None):
+def project_handler(request, id=None):
     if request.method == 'GET':
         if id:
             return get_project_json(request, id)
@@ -166,9 +168,9 @@ def project_handler(request, id = None):
 def get_projects_json(request):
     projects_list = list(Project.objects.all())
     projects_list.sort(key=lambda project: project.pk)
-    projects_dict = {i: {"name": projects_list[i].name, "folder": projects_list[i].folder.name}
-                     for i in range(0, len(projects_list))}
-    return JsonResponse(projects_dict)
+    projects_dict = [{"name": projects_list[i].name, "folder": projects_list[i].folder.name}
+                     for i in range(0, len(projects_list))]
+    return JsonResponse(projects_dict, safe=False)
 
 
 def get_project_json(request, id):
@@ -214,7 +216,8 @@ def delete_project(request, id):
     return HttpResponseNotFound()
 
 
-def document_handler(request, id = None):
+@csrf_exempt
+def document_handler(request, id=None):
     if request.method == 'GET':
         if id:
             return get_document_json(request, id)
@@ -230,28 +233,27 @@ def document_handler(request, id = None):
     return HttpResponseBadRequest()
 
 
-def get_document_json(request):
+def get_document_json(request, id):
     document = Document.objects.get(pk=id)
-    document_dict = {document.pk: {"id": document.id, "name": document.name, "type": document.type,
-                                   "size": document.size, "category": document.category,
-                                   "section_id": document.section_id}}
+    document_dict = {"id": document.id, "name": document.name, "type": document.type,
+                     "size": document.size, "category": document.category, "section_id": document.section_id}
     return JsonResponse(document_dict)
 
 
 def post_document(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not data["name"] or not data["type"] or not data["size"] or not data["category"]\
-            or not data["content"] or not data["project_id"]:
-        return HttpResponseBadRequest()
+    if not all (k in data for k in ("name","category","content","project_id")):
+        return HttpResponseBadRequest(JsonResponse({"errors":"Fehler"}))
     project = Project.objects.get(pk=data["project_id"])
-    # temp demo code
-    section = project.section_set[0]
-    # /temp demo code
     if not project:
         return HttpResponseBadRequest()
-    Document.objects.create(name=data["name"], type=data["type"], size=data["size"], category=data["category"],
-                            content=data["content"], section=section)
+    # temp demo code
+    section = project.section_set.first()
+    # /temp demo code
+    binary_content = binascii.a2b_base64(data["content"])
+    Document.objects.create(name=data["name"], type="pdf", size=1353653, status="None", category=data["category"],
+                            content=binary_content, section=section)
     return HttpResponse("Created")
 
 
@@ -286,7 +288,7 @@ def delete_document(request, id):
     return HttpResponseNotFound()
 
 
-def requirement_handler(request, id = None):
+def requirement_handler(request, id=None):
     if request.method == 'GET':
         if id:
             return get_requirement_json(request, id)
@@ -302,7 +304,7 @@ def requirement_handler(request, id = None):
     return HttpResponseBadRequest()
 
 
-def get_requirement_json(request):
+def get_requirement_json(request, id):
     requirement = Requirement.objects.get(pk=id)
     requirement_dict = {requirement.pk: {"id": requirement.id, "name": requirement.name,
                                          "values": [r.value for r in Requirement.objects.all() if r.name == requirement.name],
@@ -349,21 +351,21 @@ def delete_requirement(request, id):
 def get_requirements_of_project_json(request, id):
     requirements_list = list(Requirement.objects.filter(project_id=id))
     requirements_list.sort(key=lambda req: req.pk)
-    requirements_dict = {i: {"id": requirements_list[i].id, "name": requirements_list[i].name,
+    requirements_dict = [{"id": requirements_list[i].id, "name": requirements_list[i].name,
                              "values": [r.value for r in requirements_list if r.name == requirements_list[i].name],
                              "document": requirements_list[i].document_id, "disabled": requirements_list[i].disabled}
-                         for i in range(0, len(requirements_list))}
-    return JsonResponse(requirements_dict)
+                         for i in range(0, len(requirements_list))]
+    return JsonResponse(requirements_dict, safe=False)
 
 
 def get_documents_of_project_json(request, id):
-    documents_list = list(Requirement.objects.filter(project_id=id))
-    documents_list.sort(key=lambda req: req.pk)
-    documents_dict = {i: {"id": documents_list[i].id, "name": documents_list[i].name,
+    documents_list = list(Document.objects.filter(section__project_id=id))
+    documents_list.sort(key=lambda doc: doc.pk)
+    documents_dict = [{"id": documents_list[i].id, "name": documents_list[i].name,
                           "type": documents_list[i].type, "size": documents_list[i].size,
                           "status": documents_list[i].status, "category": documents_list[i].category,
-                          "section_id": documents_list[i].section_id} for i in range(0, len(documents_list))}
-    return JsonResponse(documents_dict)
+                          "section_id": documents_list[i].section_id} for i in range(0, len(documents_list))]
+    return JsonResponse(documents_dict, safe=False)
 
 
 def mock_data():
@@ -424,7 +426,6 @@ def clear_db():
     db_cursor = db_connection.cursor()
     
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_document_id_seq RESTART WITH 1""")
-    db_cursor.execute("""ALTER SEQUENCE public.hetaddon_documentcategory_id_seq RESTART WITH 1""")
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_externalplatform_id_seq RESTART WITH 1""")
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_folder_id_seq RESTART WITH 1""")
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_membership_id_seq RESTART WITH 1""")

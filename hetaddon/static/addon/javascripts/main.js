@@ -1,31 +1,80 @@
-
 var apiUrlPrefix = "api/";
 var app = {};
+
+function showSuccessMessage(message) {
+    console.log(message);
+}
+
+function showErrorMessage(message) {
+    console.error(message);
+}
 
 function expandCollapse(element) {
     var self = $(element);
     self.siblings().toggle();
 }
 
-(function() {
+function addDocument() {
+    $('#add_document_file').trigger("click");
+}
 
-    //uncomment to run in atlassian!
-    // var getUrlParam = function (param) {
-    //     var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
-    //     return decodeURIComponent(codedParam);
-    // };
-    //
-    // var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
-    // var options = document.getElementById('connect-loader').getAttribute('data-options');
-    //
-    // var script = document.createElement("script");
-    // script.src = baseUrl + '/atlassian-connect/all.js';
-    //
-    // if(options) {
-    //     script.setAttribute('data-options', options);
-    // }
-    //
-    // document.getElementsByTagName("head")[0].appendChild(script);
+function uploadDocument(element) {
+    var file = element.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.readAsBinaryString(file);
+        reader.onload = function (event) {
+            var content = event.target.result;
+            var size = file.size;
+            var type = file.name.indexOf('.') != -1 ? file.name.split('.').pop() : "";
+            var data = {
+                name:"New Document",
+                size:size,
+                type:type,
+                content:btoa(content),
+                category:"oth",
+                project_id:1
+            };
+            $.ajax({
+                url: apiUrlPrefix + "documents",
+                method: "POST",
+                dataType: "application/json",
+                data: data,
+                success: function(response) {
+                    showSuccessMessage("The Document was uploaded successfully");
+                },
+                error: function(xhr, status, err) {
+                    showErrorMessage("The document could not be uploaded, please try again or contact our webmaster.");
+                }
+            });
+        };
+        reader.onerror = function (event) {
+            showErrorMessage("Could not read document file.")
+        };
+    }
+    var data = {
+
+    };
+}
+
+function addSection() {
+
+}
+
+(function() {
+    var getUrlParam = function (param) {
+        var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+        return decodeURIComponent(codedParam);
+    };
+    var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+    var options = document.getElementById('connect-loader').getAttribute('data-options');
+    var script = document.createElement("script");
+    script.src = baseUrl + '/atlassian-connect/all.js';
+    if(options) {
+        script.setAttribute('data-options', options);
+    }
+
+    document.getElementsByTagName("head")[0].appendChild(script);
 
     initDocumentTable();
     initNewProjectDialog();
@@ -38,12 +87,12 @@ function expandCollapse(element) {
 })();
 
 function initDocumentTable() {
-    new AJS.RestfulTable({
+    var documentTable = new AJS.RestfulTable({
         autoFocus: true,
         el: jQuery("#documents_table"),
         resources: {
             all: apiUrlPrefix + "projects/1/documents",
-            self: apiUrlPrefix + "projects/1/documents"
+            self: apiUrlPrefix + "documents"
         },
         columns: [
             {
@@ -67,7 +116,7 @@ function initDocumentTable() {
                 allowEdit: true
             }
         ],
-        allowCreate: true,
+        allowCreate: false,
         allowEdit: true,
         allowDelete: true,
         createPosition: "bottom",
@@ -250,10 +299,10 @@ function initProjects() {
         initialize: function(){
             var self = this;
             $.ajax({
-                url: apiUrlPrefix + "projects",
+                url: apiUrlPrefix + "folders",
                 method: "GET",
                 success: function(response) {
-                    app.projectFolders = parseFolderList(JSON.parse(response));
+                    app.projectFolders = parseFolderList(response);
                     self.render();
                 }
             });
@@ -306,7 +355,7 @@ function initRequirements() {
                 url: apiUrlPrefix + "projects/1/requirements",
                 method: "GET",
                 success: function(response) {
-                    app.requirements = parseRequirementList(JSON.parse(response));
+                    app.requirements = parseRequirementList(response);
                     self.render();
                 }
             });

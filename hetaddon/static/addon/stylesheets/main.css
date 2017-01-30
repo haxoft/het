@@ -61,3 +61,8 @@
 .cursor-pointer {
   cursor: pointer !important;
 }
+
+.aui-navgroup-vertical .aui-nav>li[aria-expanded][aria-expanded=false]>* {
+  display: inline-block !important;
+  margin: 0 !important;
+}
