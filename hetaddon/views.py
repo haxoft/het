@@ -12,7 +12,6 @@ mocked = False
 
 
 def index(request):
-
     global mocked
 
     # mock per backend run
@@ -104,12 +103,12 @@ def add_folders_to_folder_structure(list, folder_set):
 
 
 def get_folders_json(request):
-    folders_list = list(Folder.objects.all())
-    folders_list.sort(key=lambda folder: folder.pk)
-    folders_dict = [{"name": folders_list[i].name, "parent_folder_id": folders_list[i].parent_folder.id}
-                    for i in range(0, len(folders_list))]
+    folders = list(Folder.objects.all())
+    folders.sort(key=lambda folder: folder.pk)
+    folders_list = [{"name": folders[i].name, "parent_folder_id": folders[i].parent_folder.id}
+                    for i in range(0, len(folders))]
 
-    return JsonResponse(folders_dict, safe=False)
+    return JsonResponse(folders_list, safe=False)
 
 
 def post_folder(request):
@@ -166,16 +165,16 @@ def project_handler(request, id=None):
 
 
 def get_projects_json(request):
-    projects_list = list(Project.objects.all())
-    projects_list.sort(key=lambda project: project.pk)
-    projects_dict = [{"name": projects_list[i].name, "folder": projects_list[i].folder.name}
-                     for i in range(0, len(projects_list))]
-    return JsonResponse(projects_dict, safe=False)
+    projects = list(Project.objects.all())
+    projects.sort(key=lambda project: project.pk)
+    projects_list = [{"name": projects[i].name, "folder": projects[i].folder.name}
+                     for i in range(0, len(projects))]
+    return JsonResponse(projects_list, safe=False)
 
 
 def get_project_json(request, id):
     project = Project.objects.get(pk=id)
-    project_dict = {project.pk: {"name": project.name, "folder": project.folder.name}}
+    project_dict = {"name": project.name, "folder": project.folder.name}
     return JsonResponse(project_dict)
 
 
@@ -243,8 +242,8 @@ def get_document_json(request, id):
 def post_document(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not all (k in data for k in ("name","category","content","project_id")):
-        return HttpResponseBadRequest(JsonResponse({"errors":"Fehler"}))
+    if not all(k in data for k in ("name", "category", "content", "project_id", "type", "size")):
+        return HttpResponseBadRequest(JsonResponse({"errors": "Fehler"}))
     project = Project.objects.get(pk=data["project_id"])
     if not project:
         return HttpResponseBadRequest()
@@ -252,7 +251,8 @@ def post_document(request):
     section = project.section_set.first()
     # /temp demo code
     binary_content = binascii.a2b_base64(data["content"])
-    Document.objects.create(name=data["name"], type="pdf", size=1353653, status="None", category=data["category"],
+    Document.objects.create(name=data["name"], type=data["type"], size=data["size"], status="None",
+                            category=data["category"],
                             content=binary_content, section=section)
     return HttpResponse("Created")
 
@@ -306,9 +306,9 @@ def requirement_handler(request, id=None):
 
 def get_requirement_json(request, id):
     requirement = Requirement.objects.get(pk=id)
-    requirement_dict = {requirement.pk: {"id": requirement.id, "name": requirement.name,
-                                         "values": [r.value for r in Requirement.objects.all() if r.name == requirement.name],
-                                         "disabled": requirement.disabled}}
+    requirement_dict = {"id": requirement.id, "name": requirement.name,
+                        "values": [r.value for r in Requirement.objects.all() if r.name == requirement.name],
+                        "disabled": requirement.disabled}
     return JsonResponse(requirement_dict)
 
 
@@ -349,27 +349,26 @@ def delete_requirement(request, id):
 
 
 def get_requirements_of_project_json(request, id):
-    requirements_list = list(Requirement.objects.filter(project_id=id))
-    requirements_list.sort(key=lambda req: req.pk)
-    requirements_dict = [{"id": requirements_list[i].id, "name": requirements_list[i].name,
-                             "values": [r.value for r in requirements_list if r.name == requirements_list[i].name],
-                             "document": requirements_list[i].document_id, "disabled": requirements_list[i].disabled}
-                         for i in range(0, len(requirements_list))]
-    return JsonResponse(requirements_dict, safe=False)
+    requirements = list(Requirement.objects.filter(project_id=id))
+    requirements.sort(key=lambda req: req.pk)
+    requirements_list = [{"id": requirements[i].id, "name": requirements[i].name,
+                          "values": [r.value for r in requirements if r.name == requirements[i].name],
+                          "document": requirements[i].document_id, "disabled": requirements[i].disabled}
+                         for i in range(0, len(requirements))]
+    return JsonResponse(requirements_list, safe=False)
 
 
 def get_documents_of_project_json(request, id):
-    documents_list = list(Document.objects.filter(section__project_id=id))
-    documents_list.sort(key=lambda doc: doc.pk)
-    documents_dict = [{"id": documents_list[i].id, "name": documents_list[i].name,
-                          "type": documents_list[i].type, "size": documents_list[i].size,
-                          "status": documents_list[i].status, "category": documents_list[i].category,
-                          "section_id": documents_list[i].section_id} for i in range(0, len(documents_list))]
-    return JsonResponse(documents_dict, safe=False)
+    documents = list(Document.objects.filter(section__project_id=id))
+    documents.sort(key=lambda doc: doc.pk)
+    documents_list = [{"id": documents[i].id, "name": documents[i].name,
+                       "type": documents[i].type, "size": documents[i].size,
+                       "status": documents[i].status, "category": documents[i].category,
+                       "section_id": documents[i].section_id} for i in range(0, len(documents))]
+    return JsonResponse(documents_list, safe=False)
 
 
 def mock_data():
-
     clear_db()
     print("Mocking Data")
 
@@ -388,18 +387,31 @@ def mock_data():
     eu_h2020_project = Project.objects.create(name="H2020_2012", created=timezone.now(), folder=eu_comm_folder)
 
     eu_leds2014_section_general = Section.objects.create(name="General", project=eu_leds2014_project)
-    eu_leds2014_call = Document.objects.create(name="Call.pdf", type="pdf", size=1353653, status="None", section=eu_leds2014_section_general, category='cal')
-    eu_leds2014_template = Document.objects.create(name="Template.pdf", type="pdf", size=3786, status="None", section=eu_leds2014_section_general, category='tem')
+    eu_leds2014_call = Document.objects.create(name="Call.pdf", type="pdf", size=1353653, status="None",
+                                               section=eu_leds2014_section_general, category='cal')
+    eu_leds2014_template = Document.objects.create(name="Template.pdf", type="pdf", size=3786, status="None",
+                                                   section=eu_leds2014_section_general, category='tem')
 
-    Requirement.objects.create(name="Title", value="Innovating SMEs", project=eu_leds2014_project, document=eu_leds2014_call)
-    Requirement.objects.create(name="Deadline", value="30/07/2017", project=eu_leds2014_project, document=eu_leds2014_call)
-    Requirement.objects.create(name="Project context", value="Horizon 2020", project=eu_leds2014_project, document=eu_leds2014_call)
-    Requirement.objects.create(name="Project context", value="European Commission", project=eu_leds2014_project, document=eu_leds2014_call)
-    Requirement.objects.create(name="Project context", value="Industrial Leadership", project=eu_leds2014_project, document=eu_leds2014_call)
+    Requirement.objects.create(name="Title", value="Innovating SMEs", project=eu_leds2014_project,
+                               document=eu_leds2014_call)
+    Requirement.objects.create(name="Deadline", value="30/07/2017", project=eu_leds2014_project,
+                               document=eu_leds2014_call)
+    Requirement.objects.create(name="Project context", value="Horizon 2020", project=eu_leds2014_project,
+                               document=eu_leds2014_call)
+    Requirement.objects.create(name="Project context", value="European Commission", project=eu_leds2014_project,
+                               document=eu_leds2014_call)
+    Requirement.objects.create(name="Project context", value="Industrial Leadership", project=eu_leds2014_project,
+                               document=eu_leds2014_call)
     Requirement.objects.create(name="Length", value="60 pages", project=eu_leds2014_project, document=eu_leds2014_call)
-    Requirement.objects.create(name="Participation Limitations", value="The participation of female members must be at least 30%", project=eu_leds2014_project, document=eu_leds2014_call)
-    Requirement.objects.create(name="Participation Limitations", value="Consortium institutions must originate from 3 different EU countries", project=eu_leds2014_project, document=eu_leds2014_call)
-    Requirement.objects.create(name="Scope", value="The above describes three intervowen aspects of a challenge to segment the (SME-)Clients of public innovation support in order to achieve a higher social return from the investments into ...", project=eu_leds2014_project, document=eu_leds2014_call)
+    Requirement.objects.create(name="Participation Limitations",
+                               value="The participation of female members must be at least 30%",
+                               project=eu_leds2014_project, document=eu_leds2014_call)
+    Requirement.objects.create(name="Participation Limitations",
+                               value="Consortium institutions must originate from 3 different EU countries",
+                               project=eu_leds2014_project, document=eu_leds2014_call)
+    Requirement.objects.create(name="Scope",
+                               value="The above describes three intervowen aspects of a challenge to segment the (SME-)Clients of public innovation support in order to achieve a higher social return from the investments into ...",
+                               project=eu_leds2014_project, document=eu_leds2014_call)
 
     Membership.objects.create(user=user, project=eu_leds2014_project)
     Membership.objects.create(user=user, project=eu_iot_project)
@@ -407,7 +419,6 @@ def mock_data():
 
 
 def clear_db():
-
     print("Clearing DB")
     Document.objects.all().delete()
     ExternalPlatform.objects.all().delete()
@@ -424,7 +435,7 @@ def clear_db():
         print("I am unable to connect to the database")
 
     db_cursor = db_connection.cursor()
-    
+
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_document_id_seq RESTART WITH 1""")
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_externalplatform_id_seq RESTART WITH 1""")
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_folder_id_seq RESTART WITH 1""")
@@ -433,6 +444,3 @@ def clear_db():
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_requirement_id_seq RESTART WITH 1""")
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_section_id_seq RESTART WITH 1""")
     db_cursor.execute("""ALTER SEQUENCE public.hetaddon_user_id_seq RESTART WITH 1""")
-
-
-
