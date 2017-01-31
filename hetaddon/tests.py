@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.test import TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 import psycopg2
@@ -138,7 +139,9 @@ class ProjectViews(TestCase):
         self.assertTrue(len(projs_list) == 0)
 
 
-class FolderViews(TestCase):
+class FolderViews(TransactionTestCase):
+
+    reset_sequences = True
 
     """ Test that all folders are retrieved with their corresponding structure """
 
