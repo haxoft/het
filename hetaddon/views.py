@@ -239,15 +239,16 @@ def get_project_json(request, id):
 
 
 def post_project(request):
-    body_unicode = request.body.decode('utf-8')
-    data = json.loads(body_unicode)
+    print("Method post_project")
+    # print("received:" + request.body.decode("utf-8"))
+    data = json.loads(request.body.decode("utf-8"))
     if not data["name"] or not data["parent_folder_id"]:
-        return HttpResponseBadRequest()
+        return HttpResponseBadRequest("Required parameters not found! 'Name' or 'parent_folder_id' fields are missing")
     folder = Folder.objects.get(pk=data["parent_folder_id"])
     if not folder:
-        return HttpResponseBadRequest()
+        return HttpResponseBadRequest("Parent folder with id=" + str(data["parent_folder_id"]) + " not found!")
     Project.objects.create(name=data["name"], created=timezone.now(), folder=folder)
-    return HttpResponse("Created", status=201)
+    return HttpResponse("Successfully created a new project", status=201)
 
 
 def put_project(request, id):

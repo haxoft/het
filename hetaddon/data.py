@@ -5,7 +5,6 @@ import psycopg2
 
 def mock_data():
     clear_db()
-
     print("Mocking Data")
 
     eu_comm_folder = Folder.objects.create(name="European Commission", parent_folder=None)
@@ -55,7 +54,6 @@ def mock_data():
 
 
 def clear_db():
-    print("Clearing DB")
     Document.objects.all().delete()
     ExternalPlatform.objects.all().delete()
     Folder.objects.all().delete()
