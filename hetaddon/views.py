@@ -71,7 +71,7 @@ def project_handler(request, id=None):
         return get_projects_json(request)
     elif request.method == 'POST':
         if id:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Unexpected ID parameter")
         return post_project(request)
     elif request.method == 'PUT':
         return put_project(request, id)
@@ -246,7 +246,9 @@ def get_project_json(request, id):
 def post_project(request):
     data = json.loads(request.body.decode('utf-8'))
     if not all(k in data for k in ("name", "parent_folder_id")):
-        return HttpResponseBadRequest("Required parameters not found! 'Name' or 'parent_folder_id' fields are missing")
+        return HttpResponseBadRequest("Unexpected json structure! 'Name' or 'parent_folder_id' fields are missing")
+    if not data["name"] or not data["parent_folder_id"]:
+        return HttpResponseBadRequest("Found empty required parameters! 'Name' or 'parent_folder_id' fields are missing")
     folder = Folder.objects.get(pk=data["parent_folder_id"])
     if not folder:
         return HttpResponseBadRequest("Parent folder with id=" + str(data["parent_folder_id"]) + " not found!")

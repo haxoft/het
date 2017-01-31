@@ -86,9 +86,8 @@ class ProjectViews(TestCase):
         resp = self.client.post('/hxt/api/projects', json.dumps({'name': 'name', 'parent_folder_id': ''}),
                                 content_type="application/json")
         self.assertEquals(resp.status_code, 400)
-        self.assertTrue(len(projs_list) == 1)
-
-        """ Test that a project is correctly created """
+        self.assertEquals(resp.content.decode('utf-8'),
+                          "Found empty required parameters! 'Name' or 'parent_folder_id' fields are missing")
 
     """ Test that a project is correctly updated """
 
