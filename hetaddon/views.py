@@ -239,9 +239,8 @@ def get_project_json(request, id):
 
 
 def post_project(request):
-    print("Method post_project")
-    # print("received:" + request.body.decode("utf-8"))
-    data = json.loads(request.body.decode("utf-8"))
+    data = json.loads(request.body.decode('utf-8'))
+    # todo: we should test that the fields are available at all, not only empty (validate request structure)
     if not data["name"] or not data["parent_folder_id"]:
         return HttpResponseBadRequest("Required parameters not found! 'Name' or 'parent_folder_id' fields are missing")
     folder = Folder.objects.get(pk=data["parent_folder_id"])
@@ -252,11 +251,10 @@ def post_project(request):
 
 
 def put_project(request, id):
-    body_unicode = request.body.decode('utf-8')
-    data = json.loads(body_unicode)
+    data = json.loads(request.body.decode('utf-8'))
     project = Project.objects.get(pk=id)
     if not project:
-        return HttpResponseNotFound()
+        return HttpResponseNotFound("Found no project with id=" + str(id))
     if data["name"]:
         project.name = data["name"]
     if data["parent_folder_id"]:
