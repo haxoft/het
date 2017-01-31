@@ -184,7 +184,7 @@ def get_folders_json(request):
 def post_folder(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not data["name"] or not data["parent_folder_id"]:
+    if not all(k in data for k in ("name", "parent_folder_id")):
         return HttpResponseBadRequest()
     parent = Folder.objects.get(pk=data["parent_folder_id"])
     if not parent:
@@ -241,8 +241,7 @@ def get_project_json(request, id):
 
 def post_project(request):
     data = json.loads(request.body.decode('utf-8'))
-    # todo: we should test that the fields are available at all, not only empty (validate request structure)
-    if not data["name"] or not data["parent_folder_id"]:
+    if not all(k in data for k in ("name", "parent_folder_id")):
         return HttpResponseBadRequest("Required parameters not found! 'Name' or 'parent_folder_id' fields are missing")
     folder = Folder.objects.get(pk=data["parent_folder_id"])
     if not folder:
@@ -366,7 +365,7 @@ def get_requirement_json(request, id):
 def post_requirement(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not data["name"] or not data["values"] or not data["project_id"]:
+    if not all(k in data for k in ("name", "values", "project_id")):
         return HttpResponseBadRequest()
     project = Project.objects.get(pk=data["project_id"])
     if not project:
