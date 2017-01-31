@@ -1,0 +1,13 @@
+<script type="text/template" id="folder_template">
+    <li class="pl-7">
+        <ul class="aui-nav pl-7">
+            <a class="aui-nav-item aui-button aui-button-subtle" title="<%= name %>" onclick="expandCollapse(this)"><span class="glyphicon glyphicon-folder-close mr-5"></span><%= name %></a>
+            <% folders.each(function(folder) { %>
+            <%= app.FolderTemplate(folder.attributes) %>
+            <% }); %>
+            <% projects.each(function(project) { %>
+            <%= app.ProjectTemplate(project.attributes) %>
+            <% }); %>
+        </ul>
+    </li>
+</script>

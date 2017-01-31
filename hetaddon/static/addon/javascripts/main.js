@@ -46,7 +46,6 @@ function uploadDocument(element) {
                 data: JSON.stringify(data),
                 success: function(response) {
                     showSuccessMessage("The Document was uploaded successfully");
-                    app.documents.fetch();
                 },
                 error: function(xhr, status, err) {
                     showErrorMessage("The document could not be uploaded, please try again or contact our webmaster.");
@@ -84,6 +83,21 @@ function addSection() {
     });
 }
 
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 (function() {
     /*var getUrlParam = function (param) {
         var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
@@ -99,6 +113,12 @@ function addSection() {
 
     document.getElementsByTagName("head")[0].appendChild(script);*/
 
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
+
+    initModels();
+    initTemplates();
     initDocumentTable();
     initNewProjectDialog();
     initNewFolderDialog();
@@ -107,15 +127,21 @@ function addSection() {
     initRunAnalysis();
     initProjects();
     initRequirements();
+    initFolderList();
 
-    setInterval(function(){
+    /*setInterval(function(){
         app.projectFolders.fetch();
         app.requirements.fetch();
         app.documents.fetch();
-    },15000);
+        app.documentsView.render();
+        app.requirementsView.render();
+        app.projectsView.render();
+        app.newProjectFoldersView.render();
+        app.newFolderFoldersView.render();
+    },20000);*/
 })();
 
-function initDocumentTable() {
+function initModels() {
     app.Document = Backbone.Model.extend({
         defaults: {
             id: 0,
@@ -132,6 +158,58 @@ function initDocumentTable() {
         url: apiUrlPrefix + "projects/1/documents"
     });
 
+    app.Project = Backbone.Model.extend({
+        defaults: {
+            id: 0,
+            name: "",
+            requirementsExtracted: false
+        },
+        url: apiUrlPrefix + "projects"
+    });
+
+    app.ProjectList = Backbone.Collection.extend({
+        model: app.Project,
+        url: apiUrlPrefix + "projects"
+    });
+
+    app.Folder = Backbone.Model.extend({
+        defaults: {
+            id: 0,
+            name: "",
+            folders: [],
+            projects: []
+        },
+        url: apiUrlPrefix + "folders"
+    });
+
+    app.FolderList = Backbone.Collection.extend({
+        model: app.Folder,
+        url: apiUrlPrefix + "folders"
+    });
+
+    app.Requirement = Backbone.Model.extend({
+        defaults: {
+            id: 0,
+            name: "",
+            values: []
+        },
+        url: apiUrlPrefix + "requirements"
+    });
+
+    app.RequirementList = Backbone.Collection.extend({
+        model: app.Requirement,
+        url: apiUrlPrefix + "projects/1/requirements"
+    });
+}
+
+function initTemplates() {
+    app.FolderOptionTemplate = _.template($("#folder_option_template").html());
+    app.FolderTemplate = _.template($("#folder_template").html());
+    app.ProjectTemplate = _.template($("#project_template").html());
+    app.RequirementTemplate = _.template($("#requirement_template").html());
+}
+
+function initDocumentTable() {
     function parseDocumentList(documentArr) {
         var result = new app.DocumentList([]);
         _.each(documentArr, function(documentObj) {
@@ -161,34 +239,90 @@ function initDocumentTable() {
         render: function(){
             app.DocumentRowTemplate = _.template($("#document_row_template").html());
             var result = "";
-            app.documents.each(function(document) {
+            _.each(app.documents.models, function(document) {
                 result += app.DocumentRowTemplate(document.attributes);
             });
             this.$el.html(result);
         }
     });
 
-    new app.DocumentsView();
+    app.documentsView = new app.DocumentsView();
+}
+
+function initFolderList() {
+    function parseFolderOptions(folders, path) {
+        var result = [];
+        console.log(folders);
+        for(var i = 0; i < folders.length; i++) {
+            var currentFolder = folders[i];
+            var currentPath = path + "/" + currentFolder.attributes.name;
+            result.push({id: currentFolder.attributes.id, full_path: currentPath});
+            result.push.apply(result, parseFolderOptions(currentFolder.attributes.folders.models, currentPath));
+        }
+        return result;
+    }
+
+    app.NewProjectFoldersView = Backbone.View.extend({
+        el: "#new_project_folder",
+
+        initialize: function(){
+            var self = this;
+        },
+
+        render: function(){
+            var result = "";
+            var folders = parseFolderOptions(app.projectFolders.models, "");
+            _.each(folders, function(folder) {
+                result += app.FolderOptionTemplate(folder);
+            });
+            this.$el.html(result);
+        }
+    });
+
+    app.newProjectFoldersView = new app.NewProjectFoldersView();
+
+    app.NewFolderFoldersView = Backbone.View.extend({
+        el: "#new_folder_folder",
+
+        initialize: function(){
+            var self = this;
+        },
+
+        render: function(){
+            var result = "";
+            var folders = parseFolderOptions(app.projectFolders.models, "");
+            _.each(folders, function(folder) {
+                result += app.FolderOptionTemplate(folder);
+            });
+            this.$el.html(result);
+        }
+    });
+
+    app.newFolderFoldersView = new app.NewFolderFoldersView();
 }
 
 function initNewProjectDialog() {
-    AJS.$("#new_project_button").click(function() {
+    $("#new_project_button").click(function() {
         AJS.dialog2("#new_project_dialog").show();
     });
 
-    AJS.$("#new_project_dialog_close_button").click(function(e) {
+    $("#new_project_dialog_close_button").click(function(e) {
         e.preventDefault();
         AJS.dialog2("#new_project_dialog").hide();
     });
 
-    AJS.$("#new_project_dialog_submit_button").click(function() {
-        var input = AJS.$("#new_project_name").val();
-        if (input == "") showErrorMessage("Please provide a name for the new project.");
-        AJS.$.ajax({
-            url: apiUrlPrefix + "/projects",
+    $("#new_project_dialog_submit_button").click(function() {
+        var name = $("#new_project_name").val();
+        if (name == "") showErrorMessage("Please provide a name for the new project.");
+        var parentFolderId = $("#new_project_folder").val();
+        var data = {
+            name: name,
+            parent_folder_id: parentFolderId
+        };
+        $.ajax({
+            url: apiUrlPrefix + "projects",
             method: "POST",
-            dataType: "application/json",
-            data: input,
+            data: JSON.stringify(data),
             success: function() {
                 AJS.dialog2("#new_project_dialog").hide();
                 showSuccessMessage("The Project was successfully created.");
@@ -201,23 +335,27 @@ function initNewProjectDialog() {
 }
 
 function initNewFolderDialog() {
-    AJS.$("#new_folder_button").click(function() {
+    $("#new_folder_button").click(function() {
         AJS.dialog2("#new_folder_dialog").show();
     });
 
-    AJS.$("#new_folder_dialog_close_button").click(function(e) {
+    $("#new_folder_dialog_close_button").click(function(e) {
         e.preventDefault();
         AJS.dialog2("#new_folder_dialog").hide();
     });
 
-    AJS.$("#new_folder_dialog_submit_button").click(function() {
-        var name = AJS.$("#new_project_name").val();
+    $("#new_folder_dialog_submit_button").click(function() {
+        var name = $("#new_project_name").val();
         if (name == "") showErrorMessage("Please provide a name for the new project.");
-        AJS.$.ajax({
-            url: apiUrlPrefix + "/folders",
+        var parentFolderId = $("#new_project_folder").val();
+        var data = {
+            name: name,
+            parent_folder_id: parentFolderId
+        };
+        $.ajax({
+            url: apiUrlPrefix + "folders",
             method: "POST",
-            dataType: "application/json",
-            data: name,
+            data: JSON.stringify(data),
             success: function() {
                 AJS.dialog2("#new_project_dialog").hide();
                 showSuccessMessage("The Folder was successfully created.");
@@ -230,21 +368,21 @@ function initNewFolderDialog() {
 }
 
 function initImportDialog() {
-    AJS.$("#import_button").click(function() {
+    $("#import_button").click(function() {
         AJS.dialog2("#import_dialog").show();
     });
 
-    AJS.$("#import_dialog_close_button").click(function(e) {
+    $("#import_dialog_close_button").click(function(e) {
         e.preventDefault();
         AJS.dialog2("#import_dialog").hide();
     });
 
-    AJS.$("#import_dialog_submit_button").click(function() {
+    $("#import_dialog_submit_button").click(function() {
         var fileData = $('#import_file').prop('files')[0];
         var formData = new FormData();
         form_data.append('file', file_data);
         AJS.$.ajax({
-            url: apiUrlPrefix + "/projects/import",
+            url: apiUrlPrefix + "projects/import",
             method: "POST",
             data: formData,
             success: function() {
@@ -258,18 +396,18 @@ function initImportDialog() {
 }
 
 function initExportDialog() {
-    AJS.$("#export_button").click(function() {
+    $("#export_button").click(function() {
         AJS.dialog2("#export_dialog").show();
     });
 
-    AJS.$("#export_dialog_close_button").click(function(e) {
+    $("#export_dialog_close_button").click(function(e) {
         e.preventDefault();
         AJS.dialog2("#export_dialog").hide();
     });
 
-    AJS.$("#export_dialog_submit_button").click(function() {
-        AJS.$.ajax({
-            url: apiUrlPrefix + "/projects",
+    $("#export_dialog_submit_button").click(function() {
+        $.ajax({
+            url: apiUrlPrefix + "projects",
             method: "GET",
             success: function() {
                 showSuccessMessage("Here's your project export");
@@ -288,35 +426,6 @@ function initRunAnalysis() {
 }
 
 function initProjects() {
-    app.Project = Backbone.Model.extend({
-        defaults: {
-            id: 0,
-            name: "",
-            requirementsExtracted: false
-        },
-        url: apiUrlPrefix + "projects"
-    });
-
-    app.Folder = Backbone.Model.extend({
-        defaults: {
-            id: 0,
-            name: "",
-            folders: [],
-            projects: []
-        },
-        url: apiUrlPrefix + "folders"
-    });
-
-    app.ProjectList = Backbone.Collection.extend({
-        model: app.Project,
-        url: apiUrlPrefix + "projects"
-    });
-
-    app.FolderList = Backbone.Collection.extend({
-        model: app.Folder,
-        url: apiUrlPrefix + "folders"
-    });
-
     function parseProjectList(projectArr) {
         var result = new app.ProjectList([]);
         _.each(projectArr, function(projectObj) {
@@ -337,9 +446,6 @@ function initProjects() {
         return result;
     }
 
-    app.FolderTemplate = _.template($("#folder_template").html());
-    app.ProjectTemplate = _.template($("#project_template").html());
-
     app.ProjectsView = Backbone.View.extend({
         el: "#projects",
 
@@ -352,37 +458,25 @@ function initProjects() {
                     app.projectFolders = parseFolderList(response);
                     app.projectFolders.on('reset',self.render(),self);
                     self.render();
+                    app.newProjectFoldersView.render();
+                    app.newFolderFoldersView.render();
                 }
             });
         },
 
         render: function(){
             var result = "";
-            app.projectFolders.each(function(folder) {
+            _.each(app.projectFolders.models, function(folder) {
                 result += app.FolderTemplate(folder.attributes);
             });
             this.$el.html(result);
         }
     });
 
-    new app.ProjectsView();
+    app.projectsView = new app.ProjectsView();
 }
 
 function initRequirements() {
-    app.Requirement = Backbone.Model.extend({
-        defaults: {
-            id: 0,
-            name: "",
-            values: []
-        },
-        url: apiUrlPrefix + "requirements"
-    });
-
-    app.RequirementList = Backbone.Collection.extend({
-        model: app.Requirement,
-        url: apiUrlPrefix + "projects/1/requirements"
-    });
-
     function parseRequirementList(requirementArr) {
         var result = new app.RequirementList([]);
         _.each(requirementArr, function(requirementObj) {
@@ -391,8 +485,6 @@ function initRequirements() {
         });
         return result;
     }
-
-    app.RequirementTemplate = _.template($("#requirement_template").html());
 
     app.RequirementsView = Backbone.View.extend({
         el: "#requirements",
@@ -412,12 +504,12 @@ function initRequirements() {
 
         render: function(){
             var result = "";
-            app.requirements.each(function(requirement) {
+            _.each(app.requirements.models, function(requirement) {
                 result += app.RequirementTemplate(requirement.attributes);
             });
             this.$el.html(result);
         }
     });
 
-    new app.RequirementsView();
+    app.requirementsView = new app.RequirementsView();
 }

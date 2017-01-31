@@ -10,34 +10,6 @@
                         </div>
                         <ul class="aui-nav" title="Page actions" id="projects">
                         </ul>
-                        <script type="text/template" id="folder_template">
-                            <li class="pl-7">
-                                <ul class="aui-nav pl-7">
-                                    <a class="aui-nav-item aui-button aui-button-link" title="<%= name %>" onclick="expandCollapse(this)"><span class="aui-icon aui-icon-small aui-iconfont-collapsed"></span><%= name %></a>
-                                    <% folders.each(function(folder) { %>
-                                    <%= app.FolderTemplate(folder.attributes) %>
-                                    <% }); %>
-                                    <% projects.each(function(project) { %>
-                                    <%= app.ProjectTemplate(project.attributes) %>
-                                    <% }); %>
-                                </ul>
-                            </li>
-                        </script>
-                        <script type="text/template" id="project_template">
-                            <li class="pl-7">
-                                <ul class="aui-nav pl-7">
-                                    <a class="aui-nav-item aui-button aui-button-link" title="<%= name %>" onclick="expandCollapse(this)"><span class="aui-icon aui-icon-small aui-iconfont-collapsed mr-0"></span><%= name %></a>
-                                    <li class="pl-10">
-                                        <a class="aui-nav-item pl-7" title="Documents"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Documents</a>
-                                    </li>
-                                    <% if(requirementsExtracted) { %>
-                                    <li class="pl-10">
-                                        <a class="aui-nav-item pl-7" title="Requirements"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Requirements</a>
-                                    </li>
-                                    <% } %>
-                                </ul>
-                            </li>
-                        </script>
                     </div>
                 </div>
             </nav>

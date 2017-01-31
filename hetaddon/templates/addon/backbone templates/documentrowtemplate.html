@@ -1,0 +1,13 @@
+<script type="text/template" id="document_row_template">
+    <tr>
+        <td header="name"><%= name %></td>
+        <td header="type"><%= type %></td>
+        <td header="size"><%= size %></td>
+        <td header="category"><%= category %></td>
+        <td header="remove">
+            <button class="aui-button" onclick="deleteDocument(<%= id %>)">
+                Delete
+            </button>
+        </td>
+    </tr>
+</script>

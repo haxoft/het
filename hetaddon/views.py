@@ -2,7 +2,7 @@ from django.shortcuts import render
 from .data import *
 from django.utils import timezone
 from django.http import *
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 import binascii
 import json
 
@@ -16,6 +16,8 @@ mocked = False
 #####
 #################################################################################################################
 
+
+@ensure_csrf_cookie
 def index(request):
 
     global mocked
@@ -78,7 +80,6 @@ def project_handler(request, id=None):
     return HttpResponseBadRequest()
 
 
-@csrf_exempt
 def document_handler(request, id=None):
     if request.method == 'GET':
         if id:
