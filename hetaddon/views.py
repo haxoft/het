@@ -60,7 +60,7 @@ def folder_handler(request, id=None):
     elif request.method == 'PUT':
         return put_folder(request, id)
     elif request.method == 'DELETE':
-        return delete_project(request, id)
+        return delete_folder(request, id)
     return HttpResponseBadRequest()
 
 
@@ -121,6 +121,7 @@ def requirement_handler(request, id=None):
 
 def get_folderstructure_json(request, id=None):
     result = []
+    # this branch is never called?
     if id:
         project = list(Project.objects.filter(pk=id))
         projects_path = (list(Folder.objects.filter(pk=project[0].folder_id)))
@@ -172,6 +173,7 @@ def add_folders_to_folder_structure(list, folder_set):
         list.append(folder_dict)
 
 
+# not in use - remove?
 def get_folders_json(request):
     folders = list(Folder.objects.all())
     folders.sort(key=lambda folder: folder.pk)
@@ -185,12 +187,14 @@ def post_folder(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
     if not all(k in data for k in ("name", "parent_folder_id")):
-        return HttpResponseBadRequest()
-    parent = Folder.objects.get(pk=data["parent_folder_id"])
-    if not parent:
-        return HttpResponseBadRequest()
-    Folder.objects.create(name=data["name"], created=timezone.now(), parent_folder=parent)
-    return HttpResponse("Created", status=201)
+        return HttpResponseBadRequest("Unexpected structure! Missing name or parent folder id!")
+    if not data["name"]:
+        return HttpResponseBadRequest("Found empty required parameter: name")
+    parent_folder_id = data["parent_folder_id"]
+    # todo: return error upon wrong ID reception
+    parent = None if parent_folder_id is None else Folder.objects.get(pk=parent_folder_id)
+    Folder.objects.create(name=data["name"], parent_folder=parent)
+    return HttpResponse("Folder successfully created", status=201)
 
 
 def put_folder(request, id):
@@ -215,7 +219,7 @@ def delete_folder(request, id):
     if folder:
         folder.delete()
         return HttpResponse("Deleted", status=200)
-    return HttpResponseNotFound()
+    return HttpResponseNotFound("Unable to find folder with id=" + str(id))
 
 
 #################################################################################################################
@@ -260,7 +264,7 @@ def put_project(request, id):
     if data["parent_folder_id"]:
         folder = Folder.objects.get(pk=data["parent_folder_id"])
         if not folder:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Found no folder with id=" + str(data["parent_folder_id"]))
         project.folder = folder
     project.save()
     return HttpResponse("Updated", status=200)
@@ -366,7 +370,7 @@ def post_requirement(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
     if not all(k in data for k in ("name", "values", "project_id")):
-        return HttpResponseBadRequest()
+        return HttpResponseBadRequest("Missing required parameters!")
     project = Project.objects.get(pk=data["project_id"])
     if not project:
         return HttpResponseBadRequest()

@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+import psycopg2
 
 from .models import *
 import json
@@ -138,5 +139,137 @@ class ProjectViews(TestCase):
         self.assertTrue(len(projs_list) == 0)
 
 
+class FolderViews(TestCase):
 
+    """ Test that all folders are retrieved with their corresponding structure """
+
+    def test_get_folders_structure(self):
+
+        top_folder_1 = Folder.objects.create(name="top_folder_1", parent_folder=None)
+        top_folder_2 = Folder.objects.create(name="top_folder_2", parent_folder=None)
+        folder_1a = Folder.objects.create(name="folder_1a", parent_folder=top_folder_1)
+        folder_1b = Folder.objects.create(name="folder_1b", parent_folder=top_folder_1)
+        folder_2a = Folder.objects.create(name="folder_2a", parent_folder=top_folder_2)
+
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 5)
+
+        resp = self.client.get('/hxt/api/folders')
+        self.assertEquals(resp.status_code, 200)
+        self.assertTrue(type(resp.json()) is list)
+        self.assertJSONEqual(
+            str(resp.content, encoding='utf8'),
+            [{"id": 1, "name": "top_folder_1",
+                "folders": [
+                    {"id": 4, "name": "folder_1b", "folders": [], "projects": []},
+                    {"id": 3, "name": "folder_1a", "folders": [], "projects": []}
+                ],
+                "projects": []},
+            {"id": 2, "name": "top_folder_2",
+                "folders": [
+                        {"id": 5, "name": "folder_2a", "folders": [], "projects": []}],
+                "projects": []}]
+        )
+
+    """ Test that all folders are retrieved with their corresponding structure, including projects (if any) """
+
+    def test_get_folders_structure_with_projects(self):
+
+        top_folder_1 = Folder.objects.create(name="top_folder_1", parent_folder=None)
+        top_folder_2 = Folder.objects.create(name="top_folder_2", parent_folder=None)
+        folder_1a = Folder.objects.create(name="folder_1a", parent_folder=top_folder_1)
+        folder_1b = Folder.objects.create(name="folder_1b", parent_folder=top_folder_1)
+        Folder.objects.create(name="folder_2a", parent_folder=top_folder_2)
+        Project.objects.create(name="project_1a", created=timezone.now(), folder=folder_1a)
+        Project.objects.create(name="project_1b", created=timezone.now(), folder=folder_1b)
+
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 5)
+        projects_list = list(Project.objects.all())
+        self.assertTrue(len(projects_list) == 2)
+
+        resp = self.client.get('/hxt/api/folders')
+        self.assertEquals(resp.status_code, 200)
+        self.assertTrue(type(resp.json()) is list)
+        self.assertJSONEqual(
+            str(resp.content, encoding='utf8'),
+            [
+                {"id": 1, "name": "top_folder_1",
+                    "folders": [
+                        {"id": 4, "name": "folder_1b", "folders": [], "projects":
+                            [{"id": 2, "name": "project_1b", "requirementsExtracted": False}]},
+                        {"id": 3, "name": "folder_1a", "folders": [], "projects":
+                            [{"id": 1, "name": "project_1a", "requirementsExtracted": False}]}],
+                    "projects": []},
+                {"id": 2, "name": "top_folder_2",
+                    "folders": [
+                        {"id": 5, "name": "folder_2a", "folders": [], "projects": []}],
+                    "projects": []}]
+        )
+
+    """ Test that a folder is correctly created """
+
+    def test_create_folder(self):
+
+        parent_folder = Folder.objects.create(name="parent_folder", parent_folder=None)
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 1)
+        test_folder_dict = {'name': 'folder_name', 'parent_folder_id': str(parent_folder.id)}
+
+        resp = self.client.post('/hxt/api/folders', json.dumps(test_folder_dict), content_type="application/json")
+        self.assertEquals(resp.status_code, 201)
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 2)
+
+    """ Test that a root folder (with no parent) is correctly created """
+
+    def test_create_root_folder(self):
+
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 0)
+        test_folder_dict = {'name': 'folder_name', 'parent_folder_id': None}
+
+        resp = self.client.post('/hxt/api/folders', json.dumps(test_folder_dict), content_type="application/json")
+        self.assertEquals(resp.status_code, 201)
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 1)
+
+        """ Test that an error is returned on missing required name parameter """
+        resp = self.client.post('/hxt/api/folders', json.dumps({'name': '', 'parent_folder_id': ''}),
+                                content_type="application/json")
+        self.assertEquals(resp.content.decode('utf-8'), 'Found empty required parameter: name')
+        self.assertEquals(resp.status_code, 400)
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 1)
+
+    """ Test that a folder is correctly updated """
+
+    def test_update_folder(self):
+
+        test_parent_folder = Folder.objects.create(name="parent_folder", parent_folder=None)
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 2)
+        folder_update = {'name': 'updated_name', 'parent_folder_id': str(test_parent_folder.id)}
+
+        resp = self.client.put('/hxt/api/folders/' + str(test_folder.id), json.dumps(folder_update),
+                               content_type="application/json")
+        self.assertEquals(resp.status_code, 200)
+        updated_folder = Folder.objects.get(pk=test_folder.id)
+        self.assertEquals(updated_folder.name, folder_update['name'])
+        self.assertEquals(str(updated_folder.parent_folder.id), folder_update['parent_folder_id'])
+
+    """ Test that a folder is correctly deleted """
+
+    def test_delete_folder(self):
+
+        test_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 1)
+
+        resp = self.client.delete('/hxt/api/folders/' + str(test_folder.id))
+        self.assertEquals(resp.status_code, 200)
+        folders_list = list(Folder.objects.all())
+        self.assertTrue(len(folders_list) == 0)
 
