@@ -54,7 +54,7 @@ def index(request):
 def folder_handler(request, id=None):
     if request.method == 'GET':
         if id:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Unexpected ID parameter")
         # return get_folders_json(request)
         return get_folderstructure_json(request)
     elif request.method == 'POST':
@@ -104,16 +104,16 @@ def requirement_handler(request, id=None):
     if request.method == 'GET':
         if id:
             return get_requirement_json(request, id)
-        return HttpResponseBadRequest()
+        return HttpResponseBadRequest("Found undefined required ID parameter")
     elif request.method == 'POST':
         if id:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Found undefined required ID parameter")
         return post_requirement(request)
     elif request.method == 'PUT':
         return put_requirement(request, id)
     elif request.method == 'DELETE':
         return delete_requirement(request, id)
-    return HttpResponseBadRequest()
+    return HttpResponseBadRequest("Unsupported method!")
 
 
 #################################################################################################################
@@ -326,6 +326,10 @@ def delete_document(request, id):
 
 
 def get_documents_of_project_json(request, id):
+
+    # check if the document exists, return error otherwise
+    get_object_or_404(Project, pk=id)
+
     documents_list = list(Document.objects.filter(section__project_id=id))
     documents_list.sort(key=lambda doc: doc.pk)
     documents_json_list = [{"id": documents_list[i].id, "name": documents_list[i].name, "type": documents_list[i].type,
@@ -347,18 +351,19 @@ def get_documents_of_project_json(request, id):
 def get_requirement_json(request, id):
     requirement = get_object_or_404(Requirement, pk=id)
     requirement_dict = {"id": requirement.id, "name": requirement.name,
-                        "values": [r.value for r in Requirement.objects.all() if r.name == requirement.name],
-                        "disabled": requirement.disabled}
+                        "value": requirement.value, "disabled": requirement.disabled,
+                        "document_id": requirement.document.id, "project_id": requirement.project.id}
     return JsonResponse(requirement_dict)
 
 
 def post_requirement(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not all(k in data for k in ("name", "values", "project_id")):
-        return HttpResponseBadRequest("Missing required parameters!")
-    project = get_object_or_404(Requirement, pk=data["project_id"])
-    Requirement.objects.create(name=data["name"], values=data["values"], project=project)
+    if not all(k in data for k in ("name", "value", "project_id", "document_id")):
+        return HttpResponseBadRequest("Missing required parameters!Expected:[name, value, project_id, document_id]")
+    project = get_object_or_404(Project, pk=data["project_id"])
+    document = get_object_or_404(Document, pk=data["document_id"])
+    Requirement.objects.create(name=data["name"], value=data["value"], project=project, document=document)
     return HttpResponse("Requirement was successfully created.", status=201)
 
 
@@ -368,8 +373,8 @@ def put_requirement(request, id):
     requirement = get_object_or_404(Requirement, pk=id)
     if data["name"]:
         requirement.name = data["name"]
-    if data["values"]:
-        requirement.type = data["values"]
+    if data["value"]:
+        requirement.type = data["value"]
     if data["disabled"]:
         requirement.disabled = data["disabled"]
     requirement.save()
@@ -383,10 +388,15 @@ def delete_requirement(request, id):
 
 
 def get_requirements_of_project_json(request, id):
+
+    # check if the project exists, return error otherwise
+    get_object_or_404(Project, pk=id)
+
     requirements_list = list(Requirement.objects.filter(project_id=id))
     requirements_list.sort(key=lambda req: req.pk)
     requirements_json_list = [{"id": requirements_list[i].id, "name": requirements_list[i].name,
-                             "values": [r.value for r in requirements_list if r.name == requirements_list[i].name],
-                             "document": requirements_list[i].document_id, "disabled": requirements_list[i].disabled}
-                         for i in range(0, len(requirements_list))]
+                               "value": requirements_list[i].value, "document": requirements_list[i].document_id,
+                               "disabled": requirements_list[i].disabled}
+                              for i in range(0, len(requirements_list))]
+
     return JsonResponse(requirements_json_list, safe=False)

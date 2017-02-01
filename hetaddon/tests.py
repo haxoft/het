@@ -1,7 +1,5 @@
-from binascii import a2b_base64
 
 from django.test import TestCase
-from django.test import TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 import base64
@@ -134,9 +132,7 @@ class ProjectViews(TestCase):
         self.assertTrue(len(projs_list) == 0)
 
 
-class FolderViews(TransactionTestCase):
-
-    reset_sequences = True
+class FolderViews(TestCase):
 
     """ Test that all folders are retrieved with their corresponding structure """
 
@@ -156,15 +152,15 @@ class FolderViews(TransactionTestCase):
         self.assertTrue(type(resp.json()) is list)
         self.assertJSONEqual(
             str(resp.content, encoding='utf8'),
-            [{"id": 1, "name": "top_folder_1",
+            [{"id": top_folder_1.id, "name": top_folder_1.name,
                 "folders": [
-                    {"id": 4, "name": "folder_1b", "folders": [], "projects": []},
-                    {"id": 3, "name": "folder_1a", "folders": [], "projects": []}
+                    {"id": folder_1b.id, "name": folder_1b.name, "folders": [], "projects": []},
+                    {"id": folder_1a.id, "name": folder_1a.name, "folders": [], "projects": []}
                 ],
                 "projects": []},
-            {"id": 2, "name": "top_folder_2",
+            {"id": top_folder_2.id, "name": top_folder_2.name,
                 "folders": [
-                        {"id": 5, "name": "folder_2a", "folders": [], "projects": []}],
+                        {"id": folder_2a.id, "name": folder_2a.name, "folders": [], "projects": []}],
                 "projects": []}]
         )
 
@@ -176,9 +172,9 @@ class FolderViews(TransactionTestCase):
         top_folder_2 = Folder.objects.create(name="top_folder_2", parent_folder=None)
         folder_1a = Folder.objects.create(name="folder_1a", parent_folder=top_folder_1)
         folder_1b = Folder.objects.create(name="folder_1b", parent_folder=top_folder_1)
-        Folder.objects.create(name="folder_2a", parent_folder=top_folder_2)
-        Project.objects.create(name="project_1a", created=timezone.now(), folder=folder_1a)
-        Project.objects.create(name="project_1b", created=timezone.now(), folder=folder_1b)
+        folder_2a = Folder.objects.create(name="folder_2a", parent_folder=top_folder_2)
+        proj_1a = Project.objects.create(name="project_1a", created=timezone.now(), folder=folder_1a)
+        proj_1b = Project.objects.create(name="project_1b", created=timezone.now(), folder=folder_1b)
 
         folders_list = list(Folder.objects.all())
         self.assertTrue(len(folders_list) == 5)
@@ -191,16 +187,16 @@ class FolderViews(TransactionTestCase):
         self.assertJSONEqual(
             str(resp.content, encoding='utf8'),
             [
-                {"id": 1, "name": "top_folder_1",
+                {"id": top_folder_1.id, "name": top_folder_1.name,
                     "folders": [
-                        {"id": 4, "name": "folder_1b", "folders": [], "projects":
-                            [{"id": 2, "name": "project_1b", "requirementsExtracted": False}]},
-                        {"id": 3, "name": "folder_1a", "folders": [], "projects":
-                            [{"id": 1, "name": "project_1a", "requirementsExtracted": False}]}],
+                        {"id": folder_1b.id, "name": folder_1b.name, "folders": [], "projects":
+                            [{"id": proj_1b.id, "name": proj_1b.name, "requirementsExtracted": False}]},
+                        {"id": folder_1a.id, "name": folder_1a.name, "folders": [], "projects":
+                            [{"id": proj_1a.id, "name": proj_1a.name, "requirementsExtracted": False}]}],
                     "projects": []},
-                {"id": 2, "name": "top_folder_2",
+                {"id": top_folder_2.id, "name": top_folder_2.name,
                     "folders": [
-                        {"id": 5, "name": "folder_2a", "folders": [], "projects": []}],
+                        {"id": folder_2a.id, "name": folder_2a.name, "folders": [], "projects": []}],
                     "projects": []}]
         )
 
@@ -398,6 +394,145 @@ class DocumentViews(TestCase):
                            'section_id': test_doc_a2.section_id, "content": None},
                           ])
 
+        """ Test that an error is returned on non-existing project ID """
+
+        resp = self.client.get('/hxt/api/projects/' + str(555) + "/documents")
+        self.assertEquals(resp.status_code, 404)
 
 
+class RequirementViews(TestCase):
+
+    """ Test that a requirement is correctly retrieved, given an ID """
+
+    def test_get_requirement_by_id(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
+                                           section=test_section, category='cal')
+        test_req = Requirement.objects.create(name="test_req", value="Innovating SMEs", project=test_project,
+                                              document=test_doc)
+
+        req_list = list(Requirement.objects.all())
+        self.assertTrue(len(req_list) == 1)
+
+        response = self.client.get('/hxt/api/requirements/' + str(test_req.id))
+        self.assertEqual(response.status_code, 200)
+        req_dict = response.json()
+        self.assertTrue(type(req_dict) is dict)
+        # print(req_dict)
+        self.assertEqual(req_dict,
+                         {'id': test_req.id, 'name': test_req.name, "value": test_req.value,
+                          'disabled': test_req.disabled, 'document_id': test_req.document.id,
+                          'project_id': test_req.project.id})
+
+    """ Test that a requirement is correctly created """
+
+    def test_create_requirement(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
+                                           section=test_section, category='cal')
+
+        req_list = list(Requirement.objects.all())
+        self.assertTrue(len(req_list) == 0)
+
+        new_req_dict = {'name': 'test_req', 'value': 'Innovating SMEs', 'project_id': test_project.id,
+                        'document_id': test_doc.id}
+
+        resp = self.client.post('/hxt/api/requirements', json.dumps(new_req_dict), content_type="application/json")
+        print(resp.content.decode('utf-8'))
+        self.assertEquals(resp.status_code, 201)
+        req_list = list(Requirement.objects.all())
+        self.assertTrue(len(req_list) == 1)
+
+        """ Test that an error is returned on missing data """
+
+        wrong_req = {'value': 'Innovating SMEs', 'project_id': test_project.id, 'document_id': test_doc.id}
+        resp = self.client.post('/hxt/api/requirements', json.dumps(wrong_req), content_type="application/json")
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(resp.content.decode('utf-8'),
+                          "Missing required parameters!Expected:[name, value, project_id, document_id]")
+
+    """ Test that a requirement is correctly updated """
+
+    def test_update_requirement(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
+                                           section=test_section, category='cal')
+        test_req = Requirement.objects.create(name="test_req", value="Innovating SMEs", project=test_project,
+                                              document=test_doc)
+
+        req_list = list(Requirement.objects.all())
+        self.assertTrue(len(req_list) == 1)
+        req_update = {'name': 'updated_name', 'value': '', 'disabled': ''}
+
+        resp = self.client.put('/hxt/api/requirements/' + str(test_req.id), json.dumps(req_update),
+                               content_type="application/json")
+        self.assertEquals(resp.status_code, 200)
+        updated_req = Requirement.objects.get(pk=test_req.id)
+        self.assertEquals(updated_req.name, req_update['name'])
+
+        """ Test that an error is returned on non-existing requirement ID """
+
+        resp = self.client.put('/hxt/api/requirements/' + str(444), json.dumps(req_update),
+                               content_type="application/json")
+        self.assertEquals(resp.status_code, 404)
+
+    """ Test that a requirement is correctly deleted """
+
+    def test_delete_requirement(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
+                                           section=test_section, category='cal')
+        test_req = Requirement.objects.create(name="test_req", value="Innovating SMEs", project=test_project,
+                                              document=test_doc)
+
+        req_list = list(Requirement.objects.all())
+        self.assertTrue(len(req_list) == 1)
+        resp = self.client.delete('/hxt/api/requirements/' + str(test_req.id))
+        self.assertEquals(resp.status_code, 200)
+        req_list = list(Requirement.objects.all())
+        self.assertTrue(len(req_list) == 0)
+
+    """ Test that a all requirements of a project are correctly retrieved """
+
+    def test_get_requirements_of_project(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project_a = Project.objects.create(name="test_project_a", created=timezone.now(), folder=test_folder)
+        test_project_b = Project.objects.create(name="test_project_b", created=timezone.now(), folder=test_folder)
+        test_section_a = Section.objects.create(name="test_section", project=test_project_a)
+        test_section_b = Section.objects.create(name="test_section", project=test_project_b)
+        test_doc_a = Document.objects.create(name="test_doc_a1", type="pdf", size=111111, status="None",
+                                             section=test_section_a, category='cal')
+        test_req_a = Requirement.objects.create(name="test_req_a", value="Innovating SMEs", project=test_project_a,
+                                              document=test_doc_a)
+        test_req_b = Requirement.objects.create(name="test_req_b", value="Innovating SMEs", project=test_project_b,
+                                                document=test_doc_a)
+
+        req_list = list(Requirement.objects.all())
+        self.assertTrue(len(req_list) == 2)
+
+        resp = self.client.get('/hxt/api/projects/' + str(test_project_a.id) + "/requirements")
+        self.assertEquals(resp.status_code, 200)
+        req_list = resp.json()
+        self.assertTrue(type(req_list) is list)
+        self.assertEqual(req_list,
+                         [{'id': test_req_a.id, 'name': test_req_a.name, 'value': test_req_a.value,
+                           'document': test_req_a.document.id, 'disabled': test_req_a.disabled}])
+
+        """ Test that an error is returned on non-existing project ID """
+
+        resp = self.client.get('/hxt/api/projects/' + str(555) + "/requirements")
+        self.assertEquals(resp.status_code, 404)
 
