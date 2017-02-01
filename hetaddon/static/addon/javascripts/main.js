@@ -46,6 +46,7 @@ function uploadDocument(element) {
                 data: JSON.stringify(data),
                 success: function(response) {
                     showSuccessMessage("The Document was uploaded successfully");
+                    refreshDocuments();
                 },
                 error: function(xhr, status, err) {
                     showErrorMessage("The document could not be uploaded, please try again or contact our webmaster.");
@@ -60,7 +61,17 @@ function uploadDocument(element) {
 
 function deleteDocument(documentId) {
     showConfirmationMessage("Delete this document?", function(){
-        app.documents.remove(documentId);
+        $.ajax({
+            url: apiUrlPrefix + "documents/" + documentId,
+            method: "DELETE",
+            success: function() {
+                showSuccessMessage("Document deleted");
+                refreshDocuments();
+            },
+            error: function() {
+                showErrorMessage("Could not delete document");
+            }
+        });
     });
 }
 
@@ -98,8 +109,28 @@ function getCookie(name) {
     return cookieValue;
 }
 
+function refreshDocuments() {
+    app.documents.fetch(function() {
+        app.documentsView.render();
+    });
+}
+
+function refreshProjectFolders() {
+    app.projectFolders.fetch(function() {
+        app.projectsView.render();
+        app.newProjectFoldersView.render();
+        app.newFolderFoldersView.render();
+    });
+}
+
+function refreshRequirements() {
+    app.requirements.fetch(function() {
+        app.requirementsView.render();
+    });
+}
+
 (function() {
-    /*var getUrlParam = function (param) {
+    var getUrlParam = function (param) {
         var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
         return decodeURIComponent(codedParam);
     };
@@ -111,7 +142,7 @@ function getCookie(name) {
         script.setAttribute('data-options', options);
     }
 
-    document.getElementsByTagName("head")[0].appendChild(script);*/
+    document.getElementsByTagName("head")[0].appendChild(script);
 
     $.ajaxSetup({
         headers: { "X-CSRFToken": getCookie("csrftoken") }
@@ -119,26 +150,24 @@ function getCookie(name) {
 
     initModels();
     initTemplates();
-    initDocumentTable();
+    initParserFunctions();
+    fetchDocuments(initDocumentTable);
+    fetchProjectFolders(function() {
+        initProjects();
+        initFolderList();
+    });
+    fetchRequirements(initRequirements);
     initNewProjectDialog();
     initNewFolderDialog();
     initImportDialog();
     initExportDialog();
     initRunAnalysis();
-    initProjects();
-    initRequirements();
-    initFolderList();
 
-    /*setInterval(function(){
-        app.projectFolders.fetch();
-        app.requirements.fetch();
-        app.documents.fetch();
-        app.documentsView.render();
-        app.requirementsView.render();
-        app.projectsView.render();
-        app.newProjectFoldersView.render();
-        app.newFolderFoldersView.render();
-    },20000);*/
+    setInterval(function(){
+        refreshDocuments();
+        refreshProjectFolders();
+        refreshRequirements();
+    },30000);
 })();
 
 function initModels() {
@@ -155,7 +184,10 @@ function initModels() {
 
     app.DocumentList = Backbone.Collection.extend({
         model: app.Document,
-        url: apiUrlPrefix + "projects/1/documents"
+        url: apiUrlPrefix + "projects/1/documents",
+        fetch: function() {
+            fetchDocuments();
+        }
     });
 
     app.Project = Backbone.Model.extend({
@@ -184,7 +216,10 @@ function initModels() {
 
     app.FolderList = Backbone.Collection.extend({
         model: app.Folder,
-        url: apiUrlPrefix + "folders"
+        url: apiUrlPrefix + "folders",
+        fetch: function() {
+            fetchProjectFolders();
+        }
     });
 
     app.Requirement = Backbone.Model.extend({
@@ -198,7 +233,10 @@ function initModels() {
 
     app.RequirementList = Backbone.Collection.extend({
         model: app.Requirement,
-        url: apiUrlPrefix + "projects/1/requirements"
+        url: apiUrlPrefix + "projects/1/requirements",
+        fetch: function() {
+            fetchRequirements();
+        }
     });
 }
 
@@ -209,8 +247,8 @@ function initTemplates() {
     app.RequirementTemplate = _.template($("#requirement_template").html());
 }
 
-function initDocumentTable() {
-    function parseDocumentList(documentArr) {
+function initParserFunctions() {
+    app.parseDocumentList = function(documentArr) {
         var result = new app.DocumentList([]);
         _.each(documentArr, function(documentObj) {
             var document = new app.Document({id: documentObj.id, name: documentObj.name, type: documentObj.type,
@@ -220,20 +258,91 @@ function initDocumentTable() {
         return result;
     }
 
+    app.parseProjectList = function(projectArr) {
+        var result = new app.ProjectList([]);
+        _.each(projectArr, function(projectObj) {
+            var project = new app.Project({id: projectObj.id, name: projectObj.name, requirementsExtracted: projectObj.requirementsExtracted});
+            result.add(project);
+        });
+        return result;
+    }
+
+    app.parseFolderList = function(folderArr) {
+        var result = new app.FolderList([]);
+        _.each(folderArr, function(folderObj) {
+            var subFolders = app.parseFolderList(folderObj.folders);
+            var projects = app.parseProjectList(folderObj.projects);
+            var folder = new app.Folder({id: folderObj.id, name: folderObj.name, folders: subFolders, projects: projects});
+            result.add(folder);
+        });
+        return result;
+    }
+
+    app.parseRequirementList = function(requirementArr) {
+        var result = new app.RequirementList([]);
+        _.each(requirementArr, function(requirementObj) {
+            var requirement = new app.Requirement({id: requirementObj.id, name: requirementObj.name, values: requirementObj.values});
+            result.add(requirement);
+        });
+        return result;
+    }
+
+    app.parseFolderOptions = function(folders, path) {
+        var result = [];
+        if (folders.models != undefined) folders = folders.models;
+        for(var i = 0; i < folders.length; i++) {
+            var currentFolder = folders[i];
+            if (currentFolder.attributes != undefined) currentFolder = currentFolder.attributes;
+            var currentPath = path + "/" + currentFolder.name;
+            result.push({id: currentFolder.id, full_path: currentPath});
+            result.push.apply(result, app.parseFolderOptions(currentFolder.folders, currentPath));
+        }
+        return result;
+    }
+}
+
+function fetchDocuments(callback) {
+    $.ajax({
+        url: apiUrlPrefix + "projects/1/documents",
+        method: "GET",
+        success: function(response) {
+            app.documents = app.parseDocumentList(response);
+            if(callback) callback();
+        }
+    });
+}
+
+function fetchProjectFolders(callback) {
+    $.ajax({
+        url: apiUrlPrefix + "folders",
+        method: "GET",
+        success: function(response) {
+            app.projectFolders = app.parseFolderList(response);
+            if(callback) callback();
+        }
+    });
+}
+
+function fetchRequirements(callback) {
+    $.ajax({
+        url: apiUrlPrefix + "projects/1/requirements",
+        method: "GET",
+        success: function(response) {
+            app.requirements = app.parseRequirementList(response);
+            callback();
+        }
+    });
+}
+
+function initDocumentTable() {
     app.DocumentsView = Backbone.View.extend({
         el: "#document_table_rows",
 
         initialize: function(){
             var self = this;
-            $.ajax({
-                url: apiUrlPrefix + "projects/1/documents",
-                method: "GET",
-                success: function(response) {
-                    app.documents = parseDocumentList(response);
-                    app.documents.on('reset',self.render(),self);
-                    self.render();
-                }
-            });
+            self.collection = app.documents;
+            self.collection.bind("reset", _.bind(self.render, self));
+            self.render();
         },
 
         render: function(){
@@ -250,28 +359,19 @@ function initDocumentTable() {
 }
 
 function initFolderList() {
-    function parseFolderOptions(folders, path) {
-        var result = [];
-        console.log(folders);
-        for(var i = 0; i < folders.length; i++) {
-            var currentFolder = folders[i];
-            var currentPath = path + "/" + currentFolder.attributes.name;
-            result.push({id: currentFolder.attributes.id, full_path: currentPath});
-            result.push.apply(result, parseFolderOptions(currentFolder.attributes.folders.models, currentPath));
-        }
-        return result;
-    }
-
     app.NewProjectFoldersView = Backbone.View.extend({
         el: "#new_project_folder",
 
         initialize: function(){
             var self = this;
+            self.collection = app.projectFolders;
+            self.collection.bind("reset", _.bind(self.render, self));
+            self.render();
         },
 
         render: function(){
             var result = "";
-            var folders = parseFolderOptions(app.projectFolders.models, "");
+            var folders = app.parseFolderOptions(app.projectFolders, "");
             _.each(folders, function(folder) {
                 result += app.FolderOptionTemplate(folder);
             });
@@ -286,11 +386,14 @@ function initFolderList() {
 
         initialize: function(){
             var self = this;
+            self.collection = app.projectFolders;
+            self.collection.bind("reset", _.bind(self.render, self));
+            self.render();
         },
 
         render: function(){
             var result = "";
-            var folders = parseFolderOptions(app.projectFolders.models, "");
+            var folders = app.parseFolderOptions(app.projectFolders, "");
             _.each(folders, function(folder) {
                 result += app.FolderOptionTemplate(folder);
             });
@@ -326,6 +429,7 @@ function initNewProjectDialog() {
             success: function() {
                 AJS.dialog2("#new_project_dialog").hide();
                 showSuccessMessage("The Project was successfully created.");
+                refreshProjectFolders();
             },
             error: function() {
                 showErrorMessage("We could not create the project, please try again or contact our webmaster.");
@@ -359,6 +463,7 @@ function initNewFolderDialog() {
             success: function() {
                 AJS.dialog2("#new_project_dialog").hide();
                 showSuccessMessage("The Folder was successfully created.");
+                refreshProjectFolders();
             },
             error: function() {
                 showErrorMessage("We could not create the folder, please try again or contact our webmaster.");
@@ -426,42 +531,14 @@ function initRunAnalysis() {
 }
 
 function initProjects() {
-    function parseProjectList(projectArr) {
-        var result = new app.ProjectList([]);
-        _.each(projectArr, function(projectObj) {
-            var project = new app.Project({id: projectObj.id, name: projectObj.name, requirementsExtracted: projectObj.requirementsExtracted});
-            result.add(project);
-        });
-        return result;
-    }
-
-    function parseFolderList(folderArr) {
-        var result = new app.FolderList([]);
-        _.each(folderArr, function(folderObj) {
-            var subFolders = parseFolderList(folderObj.folders);
-            var projects = parseProjectList(folderObj.projects);
-            var folder = new app.Folder({id: folderObj.id, name: folderObj.name, folders: subFolders, projects: projects});
-            result.add(folder);
-        });
-        return result;
-    }
-
     app.ProjectsView = Backbone.View.extend({
         el: "#projects",
 
         initialize: function(){
             var self = this;
-            $.ajax({
-                url: apiUrlPrefix + "folders",
-                method: "GET",
-                success: function(response) {
-                    app.projectFolders = parseFolderList(response);
-                    app.projectFolders.on('reset',self.render(),self);
-                    self.render();
-                    app.newProjectFoldersView.render();
-                    app.newFolderFoldersView.render();
-                }
-            });
+            self.collection = app.projectFolders;
+            self.collection.bind("reset", _.bind(self.render, self));
+            self.render();
         },
 
         render: function(){
@@ -477,29 +554,14 @@ function initProjects() {
 }
 
 function initRequirements() {
-    function parseRequirementList(requirementArr) {
-        var result = new app.RequirementList([]);
-        _.each(requirementArr, function(requirementObj) {
-            var requirement = new app.Requirement({id: requirementObj.id, name: requirementObj.name, values: requirementObj.values});
-            result.add(requirement);
-        });
-        return result;
-    }
-
     app.RequirementsView = Backbone.View.extend({
         el: "#requirements",
 
         initialize: function(){
             var self = this;
-            $.ajax({
-                url: apiUrlPrefix + "projects/1/requirements",
-                method: "GET",
-                success: function(response) {
-                    app.requirements = parseRequirementList(response);
-                    app.requirements.on('reset',self.render(),self);
-                    self.render();
-                }
-            });
+            self.collection = app.requirements;
+            self.collection.bind("reset", _.bind(self.render, self));
+            self.render();
         },
 
         render: function(){
