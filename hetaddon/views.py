@@ -205,10 +205,12 @@ def put_folder(request, id):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
     folder = get_object_or_404(Folder, pk=id)
-    if data["name"]:
+    if "name" in data:
         folder.name = data["name"]
-    if data["parent_folder_id"]:
-        parent = get_object_or_404(Folder, pk=data["parent_folder_id"])
+    if "parent_folder_id" in data:
+        parent = Folder.objects.get(pk=data["parent_folder_id"])
+        if not folder:
+            return HttpResponseBadRequest()
         folder.parent_folder = parent
     folder.save()
     return HttpResponse("Updated", status=200)
@@ -255,9 +257,9 @@ def post_project(request):
 def put_project(request, id):
     data = json.loads(request.body.decode('utf-8'))
     project = get_object_or_404(Project, pk=id)
-    if data["name"]:
+    if "name" in data:
         project.name = data["name"]
-    if data["parent_folder_id"]:
+    if "parent_folder_id" in data:
         folder = get_object_or_404(Folder, pk=data["parent_folder_id"])
         project.folder = folder
     project.save()
@@ -303,16 +305,15 @@ def put_document(request, id):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
     document = get_object_or_404(Document, pk=id)
-
-    if data["name"]:
+    if "name" in data:
         document.name = data["name"]
-    if data["type"]:
+    if "type" in data:
         document.type = data["type"]
-    if data["size"]:
+    if "size" in data:
         document.size = data["size"]
-    if data["category"]:
+    if "category" in data:
         document.category = data["category"]
-    if data["section_id"]:
+    if "section_id" in data:
         section = get_object_or_404(Section, pk=data["section_id"])
         document.section = section
     document.save()
@@ -371,11 +372,11 @@ def put_requirement(request, id):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
     requirement = get_object_or_404(Requirement, pk=id)
-    if data["name"]:
+    if "name" in data:
         requirement.name = data["name"]
-    if data["value"]:
-        requirement.type = data["value"]
-    if data["disabled"]:
+    if "values" in data:
+        requirement.type = data["values"]
+    if "disabled" in data:
         requirement.disabled = data["disabled"]
     requirement.save()
     return HttpResponse("Requirement was successfully updated", status=200)
