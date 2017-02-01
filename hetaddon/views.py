@@ -1,3 +1,5 @@
+import base64
+
 from django.shortcuts import render
 from .data import *
 from django.utils import timezone
@@ -194,7 +196,7 @@ def post_folder(request):
         return HttpResponseBadRequest("Found empty required parameter: name")
     parent_folder_id = data["parent_folder_id"]
     # todo: return error upon wrong ID reception
-    parent = None if parent_folder_id is None else Folder.objects.get(pk=parent_folder_id)
+    parent = None if parent_folder_id is None else get_object_or_404(Folder, pk=parent_folder_id)
     Folder.objects.create(name=data["name"], parent_folder=parent)
     return HttpResponse("Folder successfully created", status=201)
 
@@ -202,26 +204,20 @@ def post_folder(request):
 def put_folder(request, id):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    folder = Folder.objects.get(pk=id)
-    if not folder:
-        return HttpResponseNotFound()
+    folder = get_object_or_404(Folder, pk=id)
     if data["name"]:
         folder.name = data["name"]
     if data["parent_folder_id"]:
-        parent = Folder.objects.get(pk=data["parent_folder_id"])
-        if not folder:
-            return HttpResponseBadRequest()
+        parent = get_object_or_404(Folder, pk=data["parent_folder_id"])
         folder.parent_folder = parent
     folder.save()
     return HttpResponse("Updated", status=200)
 
 
 def delete_folder(request, id):
-    folder = Folder.objects.get(pk=id)
-    if folder:
-        folder.delete()
-        return HttpResponse("Deleted", status=200)
-    return HttpResponseNotFound("Unable to find folder with id=" + str(id))
+    folder = get_object_or_404(Folder, pk=id)
+    folder.delete()
+    return HttpResponse("Deleted", status=200)
 
 
 #################################################################################################################
@@ -251,9 +247,7 @@ def post_project(request):
         return HttpResponseBadRequest("Unexpected json structure! 'Name' or 'parent_folder_id' fields are missing")
     if not data["name"] or not data["parent_folder_id"]:
         return HttpResponseBadRequest("Found empty required parameters! 'Name' or 'parent_folder_id' fields are missing")
-    folder = Folder.objects.get(pk=data["parent_folder_id"])
-    if not folder:
-        return HttpResponseBadRequest("Parent folder with id=" + str(data["parent_folder_id"]) + " not found!")
+    folder = get_object_or_404(Folder, pk=data["parent_folder_id"])
     Project.objects.create(name=data["name"], created=timezone.now(), folder=folder)
     return HttpResponse("Successfully created a new project", status=201)
 
@@ -261,25 +255,19 @@ def post_project(request):
 def put_project(request, id):
     data = json.loads(request.body.decode('utf-8'))
     project = get_object_or_404(Project, pk=id)
-    # if not project:
-    #     return HttpResponseNotFound("Found no project with id=" + str(id))
     if data["name"]:
         project.name = data["name"]
     if data["parent_folder_id"]:
         folder = get_object_or_404(Folder, pk=data["parent_folder_id"])
-        if not folder:
-            return HttpResponseBadRequest("Found no folder with id=" + str(data["parent_folder_id"]))
         project.folder = folder
     project.save()
     return HttpResponse("Updated", status=200)
 
 
 def delete_project(request, id):
-    project = Project.objects.get(pk=id)
-    if project:
-        project.delete()
-        return HttpResponse("Deleted", status=200)
-    return HttpResponseNotFound()
+    project = get_object_or_404(Project, pk=id)
+    project.delete()
+    return HttpResponse("Deleted", status=200)
 
 
 #################################################################################################################
@@ -290,7 +278,7 @@ def delete_project(request, id):
 
 
 def get_document_json(request, id):
-    document = Document.objects.get(pk=id)
+    document = get_object_or_404(Document, pk=id)
     document_dict = {"id": document.id, "name": document.name, "type": document.type,
                      "size": document.size, "category": document.category, "section_id": document.section_id}
     return JsonResponse(document_dict)
@@ -303,9 +291,7 @@ def post_document(request):
         return HttpResponseBadRequest("Unexpected structure! Missing required parameters")
     if not data["name"] or not data["category"] or not data["type"] or not data["size"] or not data["section_id"]:
         return HttpResponseBadRequest("Missing required parameters!")
-    section = Section.objects.get(pk=data["section_id"])
-    if not section:
-        return HttpResponseBadRequest("Unable to find project section with id=" + str(data["section_id"]))
+    section = get_object_or_404(Section, pk=data["section_id"])
     binary_content = binascii.a2b_base64(data["content"])
     Document.objects.create(name=data["name"], type=data["type"], size=data["size"], status="None",
                             category=data["category"],
@@ -316,9 +302,8 @@ def post_document(request):
 def put_document(request, id):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    document = Document.objects.get(pk=id)
-    if not document:
-        return HttpResponseNotFound()
+    document = get_object_or_404(Document, pk=id)
+
     if data["name"]:
         document.name = data["name"]
     if data["type"]:
@@ -335,20 +320,20 @@ def put_document(request, id):
 
 
 def delete_document(request, id):
-    document = Document.objects.get(pk=id)
-    if document:
-        document.delete()
-        return HttpResponse("Deleted", status=200)
-    return HttpResponseNotFound()
+    document = get_object_or_404(Document, pk=id)
+    document.delete()
+    return HttpResponse("Document was successfully deleted", status=200)
 
 
 def get_documents_of_project_json(request, id):
     documents_list = list(Document.objects.filter(section__project_id=id))
     documents_list.sort(key=lambda doc: doc.pk)
-    documents_json_list = [{"id": documents_list[i].id, "name": documents_list[i].name,
-                          "type": documents_list[i].type, "size": documents_list[i].size,
-                          "status": documents_list[i].status, "category": documents_list[i].category,
-                          "section_id": documents_list[i].section_id} for i in range(0, len(documents_list))]
+    documents_json_list = [{"id": documents_list[i].id, "name": documents_list[i].name, "type": documents_list[i].type,
+                            "size": documents_list[i].size, "status": documents_list[i].status,
+                            "category": documents_list[i].category, "section_id": documents_list[i].section_id,
+                            "content": None if documents_list[i].content is None else base64.b64encode(documents_list[i].content)}
+                           for i in range(0, len(documents_list))]
+
     return JsonResponse(documents_json_list, safe=False)
 
 
@@ -360,7 +345,7 @@ def get_documents_of_project_json(request, id):
 
 
 def get_requirement_json(request, id):
-    requirement = Requirement.objects.get(pk=id)
+    requirement = get_object_or_404(Requirement, pk=id)
     requirement_dict = {"id": requirement.id, "name": requirement.name,
                         "values": [r.value for r in Requirement.objects.all() if r.name == requirement.name],
                         "disabled": requirement.disabled}
@@ -372,19 +357,15 @@ def post_requirement(request):
     data = json.loads(body_unicode)
     if not all(k in data for k in ("name", "values", "project_id")):
         return HttpResponseBadRequest("Missing required parameters!")
-    project = Project.objects.get(pk=data["project_id"])
-    if not project:
-        return HttpResponseBadRequest()
+    project = get_object_or_404(Requirement, pk=data["project_id"])
     Requirement.objects.create(name=data["name"], values=data["values"], project=project)
-    return HttpResponse("Created", status=201)
+    return HttpResponse("Requirement was successfully created.", status=201)
 
 
 def put_requirement(request, id):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    requirement = Requirement.objects.get(pk=id)
-    if not requirement:
-        return HttpResponseNotFound()
+    requirement = get_object_or_404(Requirement, pk=id)
     if data["name"]:
         requirement.name = data["name"]
     if data["values"]:
@@ -392,15 +373,13 @@ def put_requirement(request, id):
     if data["disabled"]:
         requirement.disabled = data["disabled"]
     requirement.save()
-    return HttpResponse("Updated", status=200)
+    return HttpResponse("Requirement was successfully updated", status=200)
 
 
 def delete_requirement(request, id):
-    requirement = Requirement.objects.get(pk=id)
-    if requirement:
-        requirement.delete()
-        return HttpResponse("Deleted", status=200)
-    return HttpResponseNotFound()
+    requirement = get_object_or_404(Requirement, pk=id)
+    requirement.delete()
+    return HttpResponse("Requirement was successfully deleted", status=200)
 
 
 def get_requirements_of_project_json(request, id):

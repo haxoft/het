@@ -366,3 +366,38 @@ class DocumentViews(TestCase):
         docs_list = list(Document.objects.all())
         self.assertTrue(len(docs_list) == 0)
 
+    """ Test that a all documents of a project are correctly retrieved """
+
+    def test_get_documents_of_project(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project_a = Project.objects.create(name="test_project_a", created=timezone.now(), folder=test_folder)
+        test_project_b = Project.objects.create(name="test_project_b", created=timezone.now(), folder=test_folder)
+        test_section_a = Section.objects.create(name="test_section", project=test_project_a)
+        test_section_b = Section.objects.create(name="test_section", project=test_project_b)
+        test_doc_a1 = Document.objects.create(name="test_doc_a1", type="pdf", size=111111, status="None",
+                                             section=test_section_a, category='cal')
+        test_doc_a2 = Document.objects.create(name="test_doc_a2", type="pdf", size=111111, status="None",
+                                             section=test_section_a, category='cal')
+        test_doc_b = Document.objects.create(name="test_doc_b", type="pdf", size=111111, status="None",
+                                             section=test_section_b, category='cal')
+
+        doc_list = list(Document.objects.all())
+        self.assertTrue(len(doc_list) == 3)
+
+        resp = self.client.post('/hxt/api/projects/' + str(test_project_a.id) + "/documents")
+        self.assertEquals(resp.status_code, 200)
+        doc_list = resp.json()
+        self.assertTrue(type(doc_list) is list)
+        self.assertEqual(doc_list,
+                         [{'id': test_doc_a1.id, 'name': test_doc_a1.name, 'type': test_doc_a1.type,
+                           'size': test_doc_a1.size, 'status': 'None', 'category': test_doc_a1.category,
+                           'section_id': test_doc_a1.section_id, "content": None},
+                          {'id': test_doc_a2.id, 'name': test_doc_a2.name, 'type': test_doc_a2.type,
+                           'size': test_doc_a2.size, 'status': 'None', 'category': test_doc_a2.category,
+                           'section_id': test_doc_a2.section_id, "content": None},
+                          ])
+
+
+
+
