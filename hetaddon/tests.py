@@ -96,26 +96,27 @@ class ProjectViews(TestCase):
 
     def test_update_project(self):
 
-        eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
-        leds_project = Project.objects.create(name="LEDS_2014", created=timezone.now(), folder=eu_leds_folder)
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
 
         projs_list = list(Project.objects.all())
         self.assertTrue(len(projs_list) == 1)
-        proj_update = {'name': 'updated_name', 'parent_folder_id': str(eu_leds_folder.id)}
+        proj_update = {'name': 'updated_name', 'parent_folder_id': str(test_folder.id)}
 
-        resp = self.client.put('/hxt/api/projects/' + str(leds_project.id), json.dumps(proj_update), content_type="application/json")
+        resp = self.client.put('/hxt/api/projects/' + str(test_project.id), json.dumps(proj_update),
+                               content_type="application/json")
         self.assertEquals(resp.status_code, 200)
-        updated_proj = Project.objects.get(pk=leds_project.id)
+
+        updated_proj = Project.objects.get(pk=test_project.id)
         self.assertEquals(updated_proj.name, proj_update['name'])
         self.assertEquals(str(updated_proj.folder.id), proj_update['parent_folder_id'])
 
-        """ Test that an error is returned on missing data """
+        """ Test that an error is returned on non-existing parent folder ID """
 
-        proj_update = {'name': '', 'parent_folder_id': ''}
-        resp = self.client.put('/hxt/api/projects/' + str(leds_project.id), json.dumps(proj_update),
+        proj_update = {'name': '', 'parent_folder_id': 555}
+        resp = self.client.put('/hxt/api/projects/' + str(test_project.id), json.dumps(proj_update),
                                content_type="application/json")
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.content.decode('utf-8'), "Found empty name and parent folder ID! NOP")
+        self.assertEquals(resp.status_code, 404)
 
     """ Test that a project is correctly deleted """
 
@@ -332,17 +333,6 @@ class DocumentViews(TestCase):
 
         docs_list = list(Document.objects.all())
         self.assertTrue(len(docs_list) == 1)
-
-        # if data["name"]:
-        #     document.name = data["name"]
-        # if data["type"]:
-        #     document.type = data["type"]
-        # if data["size"]:
-        #     document.size = data["size"]
-        # if data["category"]:
-        #     document.category = data["category"]
-        # if data["section_id"]:
-
         doc_update = {'name': 'updated_name', 'type': '', 'size': '', 'category': '', 'section_id': ''}
 
         resp = self.client.put('/hxt/api/documents/' + str(test_doc.id), json.dumps(doc_update),
@@ -351,26 +341,28 @@ class DocumentViews(TestCase):
         updated_doc = Document.objects.get(pk=test_doc.id)
         self.assertEquals(updated_doc.name, doc_update['name'])
 
-        # """ Test that an error is returned on missing data """
-        #
-        # proj_update = {'name': '', 'parent_folder_id': ''}
-        # resp = self.client.put('/hxt/api/projects/' + str(leds_project.id), json.dumps(proj_update),
-        #                        content_type="application/json")
-        # self.assertEquals(resp.status_code, 400)
-        # self.assertEquals(resp.content.decode('utf-8'), "Found empty name and parent folder ID! NOP")
+        """ Test that an error is returned on non-existing section ID """
 
-    # """ Test that a project is correctly deleted """
-    #
-    # def test_delete_project(self):
-    #
-    #     eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
-    #     leds_project = Project.objects.create(name="LEDS_2014", created=timezone.now(), folder=eu_leds_folder)
-    #
-    #     projs_list = list(Project.objects.all())
-    #     self.assertTrue(len(projs_list) == 1)
-    #
-    #     resp = self.client.delete('/hxt/api/projects/' + str(leds_project.id))
-    #     self.assertEquals(resp.status_code, 200)
-    #     projs_list = list(Project.objects.all())
-    #     self.assertTrue(len(projs_list) == 0)
+        doc_update = {'name': 'updated_name', 'type': '', 'size': '', 'category': '', 'section_id': 555}
+        resp = self.client.put('/hxt/api/documents/' + str(test_doc.id), json.dumps(doc_update),
+                               content_type="application/json")
+        self.assertEquals(resp.status_code, 404)
+
+    """ Test that a document is correctly deleted """
+
+    def test_delete_document(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=111111, status="None",
+                                           section=test_section, category='cal')
+
+        docs_list = list(Document.objects.all())
+        self.assertTrue(len(docs_list) == 1)
+
+        resp = self.client.delete('/hxt/api/documents/' + str(test_doc.id))
+        self.assertEquals(resp.status_code, 200)
+        docs_list = list(Document.objects.all())
+        self.assertTrue(len(docs_list) == 0)
 

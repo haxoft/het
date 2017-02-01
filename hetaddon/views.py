@@ -3,6 +3,8 @@ from .data import *
 from django.utils import timezone
 from django.http import *
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.shortcuts import get_object_or_404
+
 import binascii
 import json
 
@@ -258,13 +260,13 @@ def post_project(request):
 
 def put_project(request, id):
     data = json.loads(request.body.decode('utf-8'))
-    project = Project.objects.get(pk=id)
-    if not project:
-        return HttpResponseNotFound("Found no project with id=" + str(id))
+    project = get_object_or_404(Project, pk=id)
+    # if not project:
+    #     return HttpResponseNotFound("Found no project with id=" + str(id))
     if data["name"]:
         project.name = data["name"]
     if data["parent_folder_id"]:
-        folder = Folder.objects.get(pk=data["parent_folder_id"])
+        folder = get_object_or_404(Folder, pk=data["parent_folder_id"])
         if not folder:
             return HttpResponseBadRequest("Found no folder with id=" + str(data["parent_folder_id"]))
         project.folder = folder
@@ -326,12 +328,10 @@ def put_document(request, id):
     if data["category"]:
         document.category = data["category"]
     if data["section_id"]:
-        section = Section.objects.get(pk=data["section_id"])
-        if not section:
-            return HttpResponseBadRequest()
+        section = get_object_or_404(Section, pk=data["section_id"])
         document.section = section
     document.save()
-    return HttpResponse("Updated", status=200)
+    return HttpResponse("Document was successfully updated", status=200)
 
 
 def delete_document(request, id):
