@@ -84,10 +84,10 @@ def document_handler(request, id=None):
     if request.method == 'GET':
         if id:
             return get_document_json(request, id)
-        return HttpResponseBadRequest()
+        return HttpResponseBadRequest("Unsupported operation: GET documents without a specified ID")
     elif request.method == 'POST':
         if id:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Found ID parameter on POST request!")
         return post_document(request)
     elif request.method == 'PUT':
         return put_document(request, id)
@@ -297,19 +297,18 @@ def get_document_json(request, id):
 def post_document(request):
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not all(k in data for k in ("name", "category", "content", "project_id", "type", "size")):
-        return HttpResponseBadRequest(JsonResponse({"errors": "Fehler"}))
-    project = Project.objects.get(pk=data["project_id"])
-    if not project:
-        return HttpResponseBadRequest()
-    # temp demo code
-    section = project.section_set.first()
-    # /temp demo code
+    if not all(k in data for k in ("name", "category", "content", "section_id", "type", "size")):
+        return HttpResponseBadRequest("Unexpected structure! Missing required parameters")
+    if not data["name"] or not data["category"] or not data["type"] or not data["size"] or not data["section_id"]:
+        return HttpResponseBadRequest("Missing required parameters!")
+    section = Section.objects.get(pk=data["section_id"])
+    if not section:
+        return HttpResponseBadRequest("Unable to find project section with id=" + str(data["section_id"]))
     binary_content = binascii.a2b_base64(data["content"])
     Document.objects.create(name=data["name"], type=data["type"], size=data["size"], status="None",
                             category=data["category"],
                             content=binary_content, section=section)
-    return HttpResponse("Created", status=201)
+    return HttpResponse("Successfully created a new document", status=201)
 
 
 def put_document(request, id):

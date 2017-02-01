@@ -1,8 +1,10 @@
+from binascii import a2b_base64
+
 from django.test import TestCase
 from django.test import TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
-import psycopg2
+import base64
 
 from .models import *
 import json
@@ -96,8 +98,6 @@ class ProjectViews(TestCase):
 
         eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
         leds_project = Project.objects.create(name="LEDS_2014", created=timezone.now(), folder=eu_leds_folder)
-        old_project_name = str(leds_project.name)
-        old_project_folder_id = str(leds_project.folder.id)
 
         projs_list = list(Project.objects.all())
         self.assertTrue(len(projs_list) == 1)
@@ -110,18 +110,12 @@ class ProjectViews(TestCase):
         self.assertEquals(str(updated_proj.folder.id), proj_update['parent_folder_id'])
 
         """ Test that an error is returned on missing data """
-        # proj_update = {'name': 'failed_update_name', 'parent_folder_id': ''}
-        #
-        # resp = self.client.put('/hxt/api/projects/' + str(leds_project.id), json.dumps(proj_update),
-        #                        content_type="application/json")
-        # self.assertEquals(resp.status_code, 400)
-        # print("old project name:" + old_project_name)
-        # print("old project folder id:" + old_project_folder_id)
-        #
-        # # todo fix this: the project shouldn't have been updated (missing parent_folder_id in line 112), but it was!
-        # not_updated_proj = Project.objects.get(pk=leds_project.id)
-        # self.assertEquals(not_updated_proj.name, old_project_name)
-        # self.assertEquals(not_updated_proj.folder.id, old_project_folder_id)
+
+        proj_update = {'name': '', 'parent_folder_id': ''}
+        resp = self.client.put('/hxt/api/projects/' + str(leds_project.id), json.dumps(proj_update),
+                               content_type="application/json")
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(resp.content.decode('utf-8'), "Found empty name and parent folder ID! NOP")
 
     """ Test that a project is correctly deleted """
 
@@ -274,4 +268,109 @@ class FolderViews(TransactionTestCase):
         self.assertEquals(resp.status_code, 200)
         folders_list = list(Folder.objects.all())
         self.assertTrue(len(folders_list) == 0)
+
+
+class DocumentViews(TestCase):
+
+    """ Test that a document is correctly retrieved, given an ID """
+
+    def test_get_document_by_id(self):
+
+        test_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
+        test_project= Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
+                                           section=test_section, category='cal')
+
+        response = self.client.get('/hxt/api/documents/' + str(test_doc.id))
+        self.assertEqual(response.status_code, 200)
+        doc_dict = response.json()
+        self.assertTrue(type(doc_dict) is dict)
+        self.assertEqual(doc_dict,
+                         {'id': test_doc.id, 'category': test_doc.category, 'name': test_doc.name,
+                          'section_id': test_doc.section_id, 'size': test_doc.size, 'type': test_doc.type})
+
+    """ Test that a document is correctly created """
+
+    def test_create_document(self):
+
+        test_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+
+        doc_list = list(Document.objects.all())
+        self.assertTrue(len(doc_list) == 0)
+
+        bin_doc_content = base64.b64encode(bytes('data to be encoded', "utf-8"))
+        print("bin content:" + str(bin_doc_content))
+        test_doc_dict = {'name': 'test_doc', 'type': 'pdf', 'size': 1111111, 'section_id': test_section.id,
+                         'category': 'cal', 'content': bin_doc_content.decode('utf-8')}
+
+        resp = self.client.post('/hxt/api/documents', json.dumps(test_doc_dict), content_type="application/json")
+        self.assertEquals(resp.status_code, 201)
+        doc_list = list(Document.objects.all())
+        self.assertTrue(len(doc_list) == 1)
+
+        # TODO: test that the binary content is being correctly stored (i was unable to retrieve it back)
+
+        """ Test that an error is returned on missing data """
+        resp = self.client.post('/hxt/api/documents', json.dumps({'name': 'name', 'section_id': ''}),
+                                content_type="application/json")
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(resp.content.decode('utf-8'),
+                          "Unexpected structure! Missing required parameters")
+
+    """ Test that a document is correctly updated """
+
+    def test_update_document(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=111111, status="None",
+                                           section=test_section, category='cal')
+
+        docs_list = list(Document.objects.all())
+        self.assertTrue(len(docs_list) == 1)
+
+        # if data["name"]:
+        #     document.name = data["name"]
+        # if data["type"]:
+        #     document.type = data["type"]
+        # if data["size"]:
+        #     document.size = data["size"]
+        # if data["category"]:
+        #     document.category = data["category"]
+        # if data["section_id"]:
+
+        doc_update = {'name': 'updated_name', 'type': '', 'size': '', 'category': '', 'section_id': ''}
+
+        resp = self.client.put('/hxt/api/documents/' + str(test_doc.id), json.dumps(doc_update),
+                               content_type="application/json")
+        self.assertEquals(resp.status_code, 200)
+        updated_doc = Document.objects.get(pk=test_doc.id)
+        self.assertEquals(updated_doc.name, doc_update['name'])
+
+        # """ Test that an error is returned on missing data """
+        #
+        # proj_update = {'name': '', 'parent_folder_id': ''}
+        # resp = self.client.put('/hxt/api/projects/' + str(leds_project.id), json.dumps(proj_update),
+        #                        content_type="application/json")
+        # self.assertEquals(resp.status_code, 400)
+        # self.assertEquals(resp.content.decode('utf-8'), "Found empty name and parent folder ID! NOP")
+
+    # """ Test that a project is correctly deleted """
+    #
+    # def test_delete_project(self):
+    #
+    #     eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
+    #     leds_project = Project.objects.create(name="LEDS_2014", created=timezone.now(), folder=eu_leds_folder)
+    #
+    #     projs_list = list(Project.objects.all())
+    #     self.assertTrue(len(projs_list) == 1)
+    #
+    #     resp = self.client.delete('/hxt/api/projects/' + str(leds_project.id))
+    #     self.assertEquals(resp.status_code, 200)
+    #     projs_list = list(Project.objects.all())
+    #     self.assertTrue(len(projs_list) == 0)
 

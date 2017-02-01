@@ -68,6 +68,10 @@ class Document(models.Model):
     content = models.BinaryField(null=True)
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return "{ name:" + self.name + ", type:" + self.type + ", size:" + str(self.size) + ", status:" + self.status \
+               + ", category:" + self.category + ", section:" + str(self.section_id) + " }"
+
 
 class Requirement(models.Model):
     name = models.CharField(max_length=128)
