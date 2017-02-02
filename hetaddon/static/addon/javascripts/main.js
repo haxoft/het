@@ -38,7 +38,7 @@ function uploadDocument(element) {
                 type:type,
                 content:btoa(content),
                 category:"oth",
-                project_id:1
+                section_id:1
             };
             $.ajax({
                 url: apiUrlPrefix + "documents",
@@ -110,12 +110,14 @@ function getCookie(name) {
 }
 
 function refreshDocuments() {
+    console.log("Synchronizing Documents");
     app.documents.fetch(function() {
         app.documentsView.render();
     });
 }
 
 function refreshProjectFolders() {
+    console.log("Synchronizing Folders and Projects");
     app.projectFolders.fetch(function() {
         app.projectsView.render();
         app.newProjectFoldersView.render();
@@ -124,13 +126,14 @@ function refreshProjectFolders() {
 }
 
 function refreshRequirements() {
+    console.log("Synchronizing Requirements");
     app.requirements.fetch(function() {
         app.requirementsView.render();
     });
 }
 
 (function() {
-    var getUrlParam = function (param) {
+    /*var getUrlParam = function (param) {
         var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
         return decodeURIComponent(codedParam);
     };
@@ -142,7 +145,7 @@ function refreshRequirements() {
         script.setAttribute('data-options', options);
     }
 
-    document.getElementsByTagName("head")[0].appendChild(script);
+    document.getElementsByTagName("head")[0].appendChild(script);*/
 
     $.ajaxSetup({
         headers: { "X-CSRFToken": getCookie("csrftoken") }
@@ -329,7 +332,7 @@ function fetchRequirements(callback) {
         method: "GET",
         success: function(response) {
             app.requirements = app.parseRequirementList(response);
-            callback();
+            if(callback) callback();
         }
     });
 }
@@ -543,7 +546,7 @@ function initProjects() {
 
         render: function(){
             var result = "";
-            _.each(app.projectFolders.models, function(folder) {
+            _.each(app.projectFolders, function(folder) {
                 result += app.FolderTemplate(folder.attributes);
             });
             this.$el.html(result);
