@@ -1,12 +1,12 @@
 <script type="text/template" id="folder_template">
     <li class="pl-7">
         <ul class="aui-nav pl-7">
-            <a class="aui-nav-item aui-button aui-button-subtle" title="<%= name %>" onclick="expandCollapse(this)"><span class="glyphicon glyphicon-folder-close mr-5"></span><%= name %></a>
-            <% _.each(folders.models, function(folder) { %>
-            <%= app.FolderTemplate(folder.attributes) %>
+            <a class="aui-nav-item aui-button aui-button-subtle" title="<%= folder.get("name") %>" onclick="expandCollapse(this)"><span class="glyphicon glyphicon-folder-close mr-5"></span><%= folder.get("name") %></a>
+            <% folder.get("folders").each(function(folder) { %>
+                <%= app.FolderTemplate({folder:folder}) %>
             <% }); %>
-            <% _.each(projects.models, function(project) { %>
-            <%= app.ProjectTemplate(project.attributes) %>
+            <% folder.get("projects").each(function(project) { %>
+                <%= app.ProjectTemplate({project:project}) %>
             <% }); %>
         </ul>
     </li>

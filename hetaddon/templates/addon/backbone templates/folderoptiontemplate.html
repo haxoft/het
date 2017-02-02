@@ -1,3 +1,6 @@
 <script type="text/template" id="folder_option_template">
-    <option value="<%= id %>"><%= full_path %></option>
+    <option value="<%= folder.get("id") %>"><%= currentPath + "/" + folder.get("name") %></option>
+    <% folder.get("folders").each(function(subfolder){ %>
+        <%= app.FolderOptionTemplate({currentPath:currentPath + "/" + folder.get("name"),folder:subfolder}) %>
+    <% }); %>
 </script>

@@ -1,11 +1,11 @@
 <script type="text/template" id="document_row_template">
     <tr>
-        <td header="name"><%= name %></td>
-        <td header="type"><%= type %></td>
-        <td header="size"><%= size %></td>
-        <td header="category"><%= category %></td>
+        <td header="name"><%= document.get("name") %></td>
+        <td header="type"><%= document.get("type") %></td>
+        <td header="size"><%= document.get("size") %></td>
+        <td header="category"><%= document.get("category") %></td>
         <td header="remove">
-            <button class="aui-button" onclick="deleteDocument(<%= id %>)">
+            <button class="aui-button" onclick="deleteDocument(<%= document.get("id") %>)">
                 Delete
             </button>
         </td>

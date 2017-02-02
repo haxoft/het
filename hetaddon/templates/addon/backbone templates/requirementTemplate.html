@@ -1,0 +1,11 @@
+<script type="text/template" id="requirement_template">
+    <div class="field-group">
+        <label for="<%= requirement.get("name") %>_values"><%= requirement.get("name") %></label>
+        <div name="<%= name %>_values">
+            <% requirement.get("values").each(function(value) { %>
+                <textarea class="text long-field" type="text" id="<%= requirement.get("name") %>" name="<%= requirement.get("name") %>" title="<%= requirement.get("name") %>"><%= value.get("data") %></textarea>
+                <br/>
+            <% }); %>
+        </div>
+    </div>
+</script>

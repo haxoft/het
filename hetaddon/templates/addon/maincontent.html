@@ -42,16 +42,5 @@
     <div class="tabs-pane" id="tabs-example-second">
         <form class="aui mt-20" id="requirements">
         </form>
-        <script type="text/template" id="requirement_template">
-            <div class="field-group">
-                <label for="<%= name %>_values"><%= name %></label>
-                <div name="<%= name %>_values">
-                    <% _.each(values, function(value) { %>
-                    <textarea class="text long-field" type="text" id="<%= name %>" name="<%= name %>" title="<%= name %>"><%= value %></textarea>
-                    <br/>
-                    <% }); %>
-                </div>
-            </div>
-        </script>
     </div>
 </div>

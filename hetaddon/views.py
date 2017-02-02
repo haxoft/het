@@ -189,6 +189,7 @@ def get_folders_json(request):
 
 def post_folder(request):
     body_unicode = request.body.decode('utf-8')
+    print(body_unicode)
     data = json.loads(body_unicode)
     if not all(k in data for k in ("name", "parent_folder_id")):
         return HttpResponseBadRequest("Unexpected structure! Missing name or parent folder id!")
@@ -333,8 +334,7 @@ def get_documents_of_project_json(request, id):
     documents_list.sort(key=lambda doc: doc.pk)
     documents_json_list = [{"id": documents_list[i].id, "name": documents_list[i].name, "type": documents_list[i].type,
                             "size": documents_list[i].size, "status": documents_list[i].status,
-                            "category": documents_list[i].category, "section_id": documents_list[i].section_id,
-                            "content": None if documents_list[i].content is None else base64.b64encode(documents_list[i].content)}
+                            "category": documents_list[i].category, "section_id": documents_list[i].section_id}
                            for i in range(0, len(documents_list))]
 
     return JsonResponse(documents_json_list, safe=False)
