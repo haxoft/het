@@ -208,9 +208,7 @@ def put_folder(request, id):
     if "name" in data:
         folder.name = data["name"]
     if "parent_folder_id" in data:
-        parent = Folder.objects.get(pk=data["parent_folder_id"])
-        if not folder:
-            return HttpResponseBadRequest()
+        parent = get_object_or_404(Folder, pk=data["parent_folder_id"])
         folder.parent_folder = parent
     folder.save()
     return HttpResponse("Updated", status=200)
