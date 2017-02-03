@@ -237,7 +237,7 @@ def delete_folder(request, id):
 def get_projects_json(request):
     projects = list(Project.objects.all())
     projects.sort(key=lambda project: project.pk)
-    projects_list = [{"name": projects[i].name, "folder": projects[i].folder.name}
+    projects_list = [{"name": projects[i].name, "created": projects[i].created, "folder_id": projects[i].folder.id}
                      for i in range(0, len(projects))]
     return JsonResponse(projects_list, safe=False)
 

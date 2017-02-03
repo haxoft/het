@@ -2,6 +2,8 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+import dateutil.parser
+
 import base64
 
 from .models import *
@@ -30,21 +32,20 @@ class ProjectViews(TestCase):
 
         eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=None)
         leds_project = Project.objects.create(name="LEDS_2014", created=timezone.now(), folder=eu_leds_folder)
+        test_project = Project.objects.create(name="Test_project", created=timezone.now(), folder=eu_leds_folder)
 
         response = self.client.get('/hxt/api/projects')
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(type(response.json()) is list)
-        self.assertJSONEqual(
-            str(response.content, encoding='utf8'),
-            [{'name': leds_project.name, 'folder': eu_leds_folder.name}]
-        )
 
-        Project.objects.create(name="Test_project", created=timezone.now(), folder=eu_leds_folder)
-        response = self.client.get('/hxt/api/projects')
-        self.assertEqual(response.status_code, 200)
-        projs_list = response.json()
-        self.assertTrue(type(projs_list) is list)
-        self.assertEquals(len(projs_list), 2)
+        projects_list = response.json()
+        self.assertTrue(isinstance(projects_list, list))
+        self.assertTrue(len(projects_list) == 2)
+
+        self.assertEquals(projects_list[0]["name"], leds_project.name)
+        self.assertEquals(projects_list[0]["folder_id"], leds_project.folder.id)
+        self.assertEquals(projects_list[1]["name"], test_project.name)
+        self.assertEquals(projects_list[1]["folder_id"], test_project.folder.id)
+
 
     """ Test if a project is correctly retrieved byt its ID """
 
