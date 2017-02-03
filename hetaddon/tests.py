@@ -329,7 +329,7 @@ class DocumentViews(TestCase):
 
         docs_list = list(Document.objects.all())
         self.assertTrue(len(docs_list) == 1)
-        doc_update = {'name': 'updated_name', 'type': '', 'size': '', 'category': '', 'section_id': ''}
+        doc_update = {'name': 'updated_name'}
 
         resp = self.client.put('/hxt/api/documents/' + str(test_doc.id), json.dumps(doc_update),
                                content_type="application/json")
@@ -388,10 +388,10 @@ class DocumentViews(TestCase):
         self.assertEqual(doc_list,
                          [{'id': test_doc_a1.id, 'name': test_doc_a1.name, 'type': test_doc_a1.type,
                            'size': test_doc_a1.size, 'status': 'None', 'category': test_doc_a1.category,
-                           'section_id': test_doc_a1.section_id, "content": None},
+                           'section_id': test_doc_a1.section_id},
                           {'id': test_doc_a2.id, 'name': test_doc_a2.name, 'type': test_doc_a2.type,
                            'size': test_doc_a2.size, 'status': 'None', 'category': test_doc_a2.category,
-                           'section_id': test_doc_a2.section_id, "content": None},
+                           'section_id': test_doc_a2.section_id},
                           ])
 
         """ Test that an error is returned on non-existing project ID """
@@ -411,21 +411,27 @@ class RequirementViews(TestCase):
         test_section = Section.objects.create(name="test_section", project=test_project)
         test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
                                            section=test_section, category='cal')
-        test_req = Requirement.objects.create(name="test_req", value="Innovating SMEs", project=test_project,
-                                              document=test_doc)
+        test_req = Requirement.objects.create(name="test_req", project=test_project)
+        test_req_value_a = RequirementValue.objects.create(value='test_req_value_a', disabled=True,
+                                                           requirement=test_req, document=test_doc)
+        test_req_value_b = RequirementValue.objects.create(value='test_req_value_b', disabled=True,
+                                                           requirement=test_req, document=test_doc)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 1)
+        req_val_list = list(RequirementValue.objects.all())
+        self.assertTrue(len(req_val_list) == 2)
 
         response = self.client.get('/hxt/api/requirements/' + str(test_req.id))
         self.assertEqual(response.status_code, 200)
         req_dict = response.json()
         self.assertTrue(type(req_dict) is dict)
-        # print(req_dict)
         self.assertEqual(req_dict,
-                         {'id': test_req.id, 'name': test_req.name, "value": test_req.value,
-                          'disabled': test_req.disabled, 'document_id': test_req.document.id,
-                          'project_id': test_req.project.id})
+                         {'id': test_req.id, 'name': test_req.name, 'project_id': test_project.id,
+                          'values': [{'id': test_req_value_b.id, 'value': test_req_value_b.value,
+                                      'disabled': test_req_value_b.disabled, 'document_id': test_req_value_b.document.id},
+                                     {'id': test_req_value_a.id, 'value': test_req_value_a.value,
+                                      'disabled': test_req_value_a.disabled, 'document_id': test_req_value_a.document.id}]})
 
     """ Test that a requirement is correctly created """
 
@@ -440,8 +446,11 @@ class RequirementViews(TestCase):
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 0)
 
-        new_req_dict = {'name': 'test_req', 'value': 'Innovating SMEs', 'project_id': test_project.id,
-                        'document_id': test_doc.id}
+        new_req_dict = {'name': 'test_req', 'project_id': test_project.id,
+                        'values': [
+                            {'value': 'test_value_a', 'disabled': True, 'document_id': test_doc.id},
+                            {'value': 'test_value_b', 'disabled': False, 'document_id': test_doc.id}
+                        ]}
 
         resp = self.client.post('/hxt/api/requirements', json.dumps(new_req_dict), content_type="application/json")
         print(resp.content.decode('utf-8'))
@@ -449,13 +458,13 @@ class RequirementViews(TestCase):
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 1)
 
-        """ Test that an error is returned on missing data """
+        """ Test that an error is returned on wrong data """
 
-        wrong_req = {'value': 'Innovating SMEs', 'project_id': test_project.id, 'document_id': test_doc.id}
+        wrong_req = {'name': 'name', 'project_id': test_project.id}
         resp = self.client.post('/hxt/api/requirements', json.dumps(wrong_req), content_type="application/json")
         self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.content.decode('utf-8'),
-                          "Missing required parameters!Expected:[name, value, project_id, document_id]")
+                          "Missing required parameters!Expected:[name, project_id, values]")
 
     """ Test that a requirement is correctly updated """
 
@@ -466,12 +475,11 @@ class RequirementViews(TestCase):
         test_section = Section.objects.create(name="test_section", project=test_project)
         test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
                                            section=test_section, category='cal')
-        test_req = Requirement.objects.create(name="test_req", value="Innovating SMEs", project=test_project,
-                                              document=test_doc)
+        test_req = Requirement.objects.create(name="test_req", project=test_project)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 1)
-        req_update = {'name': 'updated_name', 'value': '', 'disabled': ''}
+        req_update = {'name': 'updated_name'}
 
         resp = self.client.put('/hxt/api/requirements/' + str(test_req.id), json.dumps(req_update),
                                content_type="application/json")
@@ -494,15 +502,22 @@ class RequirementViews(TestCase):
         test_section = Section.objects.create(name="test_section", project=test_project)
         test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
                                            section=test_section, category='cal')
-        test_req = Requirement.objects.create(name="test_req", value="Innovating SMEs", project=test_project,
-                                              document=test_doc)
+        test_req = Requirement.objects.create(name="test_req", project=test_project)
+        RequirementValue.objects.create(value='test_req_value_a', disabled=True,
+                                        requirement=test_req, document=test_doc)
+        RequirementValue.objects.create(value='test_req_value_b', disabled=True,
+                                        requirement=test_req, document=test_doc)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 1)
+        req_val_list = list(RequirementValue.objects.all())
+        self.assertTrue(len(req_val_list) == 2)
         resp = self.client.delete('/hxt/api/requirements/' + str(test_req.id))
         self.assertEquals(resp.status_code, 200)
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 0)
+        req_val_list = list(RequirementValue.objects.all())
+        self.assertTrue(len(req_val_list) == 0)
 
     """ Test that a all requirements of a project are correctly retrieved """
 
@@ -515,10 +530,12 @@ class RequirementViews(TestCase):
         test_section_b = Section.objects.create(name="test_section", project=test_project_b)
         test_doc_a = Document.objects.create(name="test_doc_a1", type="pdf", size=111111, status="None",
                                              section=test_section_a, category='cal')
-        test_req_a = Requirement.objects.create(name="test_req_a", value="Innovating SMEs", project=test_project_a,
-                                              document=test_doc_a)
-        test_req_b = Requirement.objects.create(name="test_req_b", value="Innovating SMEs", project=test_project_b,
-                                                document=test_doc_a)
+        test_req_a = Requirement.objects.create(name="test_req_a", project=test_project_a)
+        test_req_val_a = RequirementValue.objects.create(value="test_req_val_a", requirement=test_req_a,
+                                                         document=test_doc_a)
+        test_req_b = Requirement.objects.create(name="test_req_b", project=test_project_b)
+        test_req_val_b = RequirementValue.objects.create(value="test_req_val_b", requirement=test_req_b,
+                                                         document=test_doc_a)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 2)
@@ -527,12 +544,41 @@ class RequirementViews(TestCase):
         self.assertEquals(resp.status_code, 200)
         req_list = resp.json()
         self.assertTrue(type(req_list) is list)
+        # print(req_list)
         self.assertEqual(req_list,
-                         [{'id': test_req_a.id, 'name': test_req_a.name, 'value': test_req_a.value,
-                           'document': test_req_a.document.id, 'disabled': test_req_a.disabled}])
+                         [{'id': test_req_a.id, 'name': test_req_a.name,
+                           'values': [{'id': test_req_val_a.id, 'value': test_req_val_a.value,
+                                       'disabled': test_req_val_a.disabled, 'document': test_req_val_a.document_id}]}])
 
         """ Test that an error is returned on non-existing project ID """
 
         resp = self.client.get('/hxt/api/projects/' + str(555) + "/requirements")
         self.assertEquals(resp.status_code, 404)
 
+    def test_update_requirement_value(self):
+
+        test_folder = Folder.objects.create(name="test_folder", parent_folder=None)
+        test_project = Project.objects.create(name="test_project", created=timezone.now(), folder=test_folder)
+        test_section = Section.objects.create(name="test_section", project=test_project)
+        test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
+                                           section=test_section, category='cal')
+        test_req = Requirement.objects.create(name="test_req", project=test_project)
+        test_req_value = RequirementValue.objects.create(value="Innovating SMEs", requirement=test_req,
+                                                         document=test_doc)
+
+        req_val_list = list(RequirementValue.objects.all())
+        self.assertTrue(len(req_val_list) == 1)
+        req_update = {'value': 'updated_value'}
+
+        resp = self.client.put('/hxt/api/requirements/' + str(test_req.id) + "/values/" + str(test_req_value.id),
+                               json.dumps(req_update), content_type="application/json")
+
+        self.assertEquals(resp.status_code, 200)
+        updated_req_val = RequirementValue.objects.get(pk=test_req_value.id)
+        self.assertEquals(updated_req_val.value, req_update['value'])
+
+        """ Test that an error is returned on non-existing requirement ID """
+
+        resp = self.client.put('/hxt/api/requirements/' + str(444), json.dumps(req_update),
+                               content_type="application/json")
+        self.assertEquals(resp.status_code, 404)

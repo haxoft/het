@@ -75,8 +75,16 @@ class Document(models.Model):
 
 class Requirement(models.Model):
     name = models.CharField(max_length=128)
-    value = models.CharField(max_length=300)  # Is this enough?
-    disabled = models.BooleanField(default=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+
+
+class RequirementValue(models.Model):
+    value = models.CharField(max_length=300)
+    disabled = models.BooleanField(default=False)
+    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE)
+    # don't delete the value when the doc is removed
+    document = models.ForeignKey(Document, null=True, on_delete=models.SET_NULL)
+
+
+
 
