@@ -571,7 +571,7 @@ class RequirementViews(TestCase):
         self.assertTrue(len(req_val_list) == 1)
         req_update = {'value': 'updated_value'}
 
-        resp = self.client.put('/hxt/api/requirements/' + str(test_req.id) + "/values/" + str(test_req_value.id),
+        resp = self.client.put('/hxt/api/values/' + str(test_req_value.id),
                                json.dumps(req_update), content_type="application/json")
 
         self.assertEquals(resp.status_code, 200)
