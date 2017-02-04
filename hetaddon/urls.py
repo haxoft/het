@@ -13,7 +13,7 @@ urlpatterns = [
     url(r'^api/documents/(?P<id>[0-9]+)$', views.document_handler, name='documents'),
     url(r'^api/requirements$', views.requirement_handler, name='requirements'),
     url(r'^api/requirements/(?P<id>[0-9]+)$', views.requirement_handler, name='requirements'),
-    url(r'^api/requirements/(?P<rid>[0-9]+)/values/(?P<vid>[0-9]+)$', views.requirement_value_handler, name='requirementValues'),
+    url(r'^api/requirements/(?P<rid>[0-9]+)/values/(?P<id>[0-9]+)$', views.requirement_value_handler, name='requirementValues'),
     url(r'^api/projects/(?P<id>[0-9]+)/documents$', views.get_documents_of_project_json, name='projectDocuments'),
     url(r'^api/projects/(?P<id>[0-9]+)/requirements$', views.get_requirements_of_project_json, name='projectRequirements')
 ]
