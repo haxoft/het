@@ -257,7 +257,8 @@ function initModels() {
             data: "",
             disabled: false,
             document_id: 0
-        }
+        },
+        url: apiUrlPrefix + "values"
     });
 
     app.RequirementValueList = Backbone.Collection.extend({
