@@ -2,11 +2,10 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-import dateutil.parser
 
 import base64
 
-from .models import *
+from hetaddon.models import *
 import json
 
 

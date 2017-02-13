@@ -1,5 +1,3 @@
-import base64
-
 from django.shortcuts import render
 from .data import *
 from django.utils import timezone

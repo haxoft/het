@@ -2,20 +2,23 @@
      "name": "HXT",
      "description": "Haxoft Extraction Tool",
      "key": "de.haxoft.hxt",
-     "baseUrl": "https://25fc1bc0.ngrok.io/",
+     "baseUrl": "https://19bdcff7.ngrok.io/",
      "vendor": {
          "name": "Haxoft",
          "url": "http://haxoft.de"
      },
      "authentication": {
-         "type": "none"
+         "type": "jwt"
      },
+      "lifecycle": {
+        "installed": "hxt/api/auth/installed"
+      },
      "apiVersion": 1,
      "modules": {
          "generalPages": [
              {
                  "url": "/hxt/",
-                 "key": "het-index",
+                 "key": "hxt-index",
                  "location": "system.top.navigation.bar",
                  "name": {
                      "value": "HXT"

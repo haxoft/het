@@ -131,7 +131,7 @@ function refreshAll(){
 }
 
 (function() {
-    /*var getUrlParam = function (param) {
+    var getUrlParam = function (param) {
         var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
         return decodeURIComponent(codedParam);
     };
@@ -143,7 +143,7 @@ function refreshAll(){
         script.setAttribute('data-options', options);
     }
 
-    document.getElementsByTagName("head")[0].appendChild(script);*/
+    document.getElementsByTagName("head")[0].appendChild(script);
 
     $.ajaxSetup({
         headers: { "X-CSRFToken": getCookie("csrftoken") }

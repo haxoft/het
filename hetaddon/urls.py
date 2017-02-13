@@ -1,10 +1,12 @@
 from django.conf.urls import url
 
 from . import views
+from hetaddon.auth import authView
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^index$', views.index, name='index'),
+    url(r'^api/auth/installed', authView.addon_installed, name='addonInstalled'),
     url(r'^api/projects$', views.project_handler, name='projects'),
     url(r'^api/projects/(?P<id>[0-9]+)$', views.project_handler, name='project'),
     url(r'^api/folders$', views.folder_handler, name='folders'),
