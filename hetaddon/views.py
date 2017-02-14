@@ -8,8 +8,6 @@ from django.shortcuts import get_object_or_404
 import binascii
 import json
 from hetaddon.auth.authManager import AuthManager
-import atlassian_jwt
-import jwt
 import logging
 
 #  nasty, remove
@@ -34,36 +32,9 @@ def index(request):
         mock_data()
         mocked = True
 
-    auth_and_save_user(request)
+    AuthManager.authenticate_user(request)
     return render(request, 'addon/index.html', {})
 
-
-def auth_and_save_user(request):
-    auth_manager = AuthManager()
-    try:
-        client_key = auth_manager.authenticate(request.method, request.get_full_path())
-        log.info("Client was successfully authenticated. Client key:" + client_key)
-        jwt_token = request.GET.get('jwt', '')
-        decoded_token = jwt.decode(jwt_token, verify=False)  # no need for verification - already done
-        user_context_dict = decoded_token["context"]["user"]
-        log.info("Received user context:" + str(user_context_dict))
-
-        atl_platform_records = ExternalPlatform.objects.filter(platform_name='atl')
-        ext_user = atl_platform_records.filter(user_ext_id=user_context_dict["userKey"])
-        if len(ext_user) > 0:
-            log.info("User recognized:" + str(ext_user[0]))
-        else:
-            log.info("User unknown. Creating new user record.")
-            new_user = User.objects.create(name=user_context_dict["displayName"], email='')
-            ExternalPlatform.objects.create(platform_name='atl',
-                                            user_ext_id=user_context_dict["userKey"],
-                                            user=new_user)
-
-        request.session['user'] = user_context_dict
-
-    except atlassian_jwt.DecodeError:
-        log.error("Authentication failed!")
-        pass
 
 #################################################################################################################
 #####
