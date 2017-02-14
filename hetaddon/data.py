@@ -2,10 +2,14 @@ from datetime import timezone
 from django.utils import timezone
 from .models import *
 import psycopg2
+import logging
+
+log = logging.getLogger('django')
+
 
 def mock_data():
     clear_db()
-    print("Mocking Data")
+    log.info("Mocking Data")
 
     eu_comm_folder = Folder.objects.create(name="European Commission", parent_folder=None)
     Folder.objects.create(name="Deutsche Forschungsgemeinschaft", parent_folder=None)

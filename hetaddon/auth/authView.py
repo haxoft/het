@@ -1,8 +1,11 @@
 from django.http import *
 from django.views.decorators.csrf import csrf_exempt
 import json
+import logging
 
 from hetaddon.auth.authManager import AuthManager
+
+log = logging.getLogger('django')
 
 
 # called after the addon is installed on Atlassian
@@ -10,7 +13,7 @@ from hetaddon.auth.authManager import AuthManager
 def addon_installed(request):
 
     data = json.loads(request.body.decode('utf-8'))
-    print("The Addon has been installed! Payload:" + str(data))
+    log.info("The Addon has been installed! Payload:" + str(data))
     AuthManager.register_tenant(data)  # stores the shared secret in DB
     return HttpResponse("OK", status=200)
 

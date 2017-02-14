@@ -9,9 +9,12 @@ import binascii
 import json
 from hetaddon.auth.authManager import AuthManager
 import atlassian_jwt
+import jwt
+import logging
 
 #  nasty, remove
 mocked = False
+log = logging.getLogger('django')
 
 
 #################################################################################################################
@@ -24,8 +27,6 @@ mocked = False
 @ensure_csrf_cookie
 def index(request):
 
-    auth_and_save_user(request)
-
     global mocked
 
     # mock per backend run
@@ -33,26 +34,35 @@ def index(request):
         mock_data()
         mocked = True
 
-    # ...some user retrieval using jwt
-    userId = 1
-    user_folders_list = Folder.objects.all()  # ... getting folders for a specific user might be tricky
-    user_projects_list = Project.objects.all()
-
-    context = {
-        'user_folders_list': user_folders_list,
-        'user_projects_list': user_projects_list,
-    }
-
-    return render(request, 'addon/index.html', context)
+    auth_and_save_user(request)
+    return render(request, 'addon/index.html', {})
 
 
 def auth_and_save_user(request):
     auth_manager = AuthManager()
     try:
         client_key = auth_manager.authenticate(request.method, request.get_full_path())
-        print("Client was successfully authenticated. Client key:" + client_key)
+        log.info("Client was successfully authenticated. Client key:" + client_key)
+        jwt_token = request.GET.get('jwt', '')
+        decoded_token = jwt.decode(jwt_token, verify=False)  # no need for verification - already done
+        user_context_dict = decoded_token["context"]["user"]
+        log.info("Received user context:" + str(user_context_dict))
+
+        atl_platform_records = ExternalPlatform.objects.filter(platform_name='atl')
+        ext_user = atl_platform_records.filter(user_ext_id=user_context_dict["userKey"])
+        if len(ext_user) > 0:
+            log.info("User recognized:" + str(ext_user[0]))
+        else:
+            log.info("User unknown. Creating new user record.")
+            new_user = User.objects.create(name=user_context_dict["displayName"], email='')
+            ExternalPlatform.objects.create(platform_name='atl',
+                                            user_ext_id=user_context_dict["userKey"],
+                                            user=new_user)
+
+        request.session['user'] = user_context_dict
+
     except atlassian_jwt.DecodeError:
-        print("Authentication failed!")
+        log.error("Authentication failed!")
         pass
 
 #################################################################################################################
@@ -163,6 +173,11 @@ def get_folderstructure_json(request, id=None):
             project_list = temp.get("projects")
         add_projects_to_folder_structure(project_list, project)
     else:
+
+        # TODO return only folders that belong to user in the session
+        user_context = request.session['user']
+        log.info("Found user session:" + str(user_context))
+
         top_folders = list(Folder.objects.filter(parent_folder=None))
         top_folders.sort(key=lambda f: f.pk)
         for folder in top_folders:
