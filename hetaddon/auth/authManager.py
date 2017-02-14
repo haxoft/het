@@ -1,26 +1,24 @@
 import atlassian_jwt
+from hetaddon.models import TenantInfo
 
 
 class AuthManager(atlassian_jwt.Authenticator):
-    def __init__(self, tenant_info_store):
+
+    def __init__(self):
         super(AuthManager, self).__init__()
-        self.tenant_info_store = tenant_info_store
+
+    @staticmethod
+    def register_tenant(tenant_info_dict):
+
+        existing_tenant_info = TenantInfo.objects.filter(client_key=tenant_info_dict["clientKey"])
+        if len(existing_tenant_info) == 0:
+            TenantInfo.objects.create(key=tenant_info_dict["key"],
+                                      client_key=tenant_info_dict["clientKey"],
+                                      shared_secret=tenant_info_dict["sharedSecret"])
 
     def get_shared_secret(self, client_key):
-        tenant_info = self.tenant_info_store.get(client_key)
-        return tenant_info['sharedSecret']
+        tenant_info = TenantInfo.objects.filter(client_key=client_key)[0]
 
-    def get_tenant_info_store(self):
-        return self.tenant_info_store
-
-
-def test_auth(tenant_info_store):
-
-    my_auth = AuthManager(tenant_info_store)
-    return None
-    # try:
-    #     client_key = my_auth.authenticate(http_method, url, headers)
-    #     # authentication succeeded
-    # except atlassian_jwt.DecodeError:
-    #     # authentication failed
-    #     pass
+        if tenant_info is not None:
+            return tenant_info.shared_secret
+        return None

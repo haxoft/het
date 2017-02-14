@@ -1,5 +1,6 @@
 var apiUrlPrefix = "api/";
 var app = {};
+var IN_IFRAME = true; //set to false when testing outside Atlassian
 
 function showSuccessMessage(message) {
     console.log(message);
@@ -131,23 +132,6 @@ function refreshAll(){
 }
 
 (function() {
-    var getUrlParam = function (param) {
-        var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
-        return decodeURIComponent(codedParam);
-    };
-    var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
-    var options = document.getElementById('connect-loader').getAttribute('data-options');
-    var script = document.createElement("script");
-    script.src = baseUrl + '/atlassian-connect/all.js';
-    if(options) {
-        script.setAttribute('data-options', options);
-    }
-
-    document.getElementsByTagName("head")[0].appendChild(script);
-
-    $.ajaxSetup({
-        headers: { "X-CSRFToken": getCookie("csrftoken") }
-    });
 
     initModels();
     initTemplates();
@@ -162,9 +146,54 @@ function refreshAll(){
     initExportDialog();
     initRunAnalysis();
 
-    refreshAll();
-    setInterval(refreshAll,30000);
+    if(IN_IFRAME) {
+        loadConnectScript();
+        setUserKey(function () {
+            refreshAll();
+            setInterval(refreshAll,30000);
+        });
+    }else{
+        refreshAll();
+        setInterval(refreshAll,30000);
+    }
+
 })();
+
+function loadConnectScript() {
+
+    var getUrlParam = function (param) {
+        var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
+        return decodeURIComponent(codedParam);
+    };
+
+    var baseUrl = getUrlParam('xdm_e') + getUrlParam('cp');
+    var options = document.getElementById('connect-loader').getAttribute('data-options');
+
+    var script = document.createElement("script");
+    script.src = baseUrl + '/atlassian-connect/all.js';
+
+    if(options) {
+        script.setAttribute('data-options', options);
+    }
+
+    document.getElementsByTagName("head")[0].appendChild(script);
+}
+
+function setUserKey(done) {
+
+    if(typeof AP !== 'undefined') {
+        AP.getUser(function (user) {
+            console.log("Retrieved user id:" + user.id + "user key:" + user.key + ", user name:" + user.fullName);
+            app.User = {key: user.key, fullName: user.fullName};
+            return done();
+        });
+    }else{
+        console.log("AP is not initialized. Will try again in 2s.");
+        setTimeout(function () {
+            setUserKey(done)
+        }, 2000);
+    }
+}
 
 function initModels() {
     app.Document = Backbone.Model.extend({

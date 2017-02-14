@@ -86,5 +86,11 @@ class RequirementValue(models.Model):
     document = models.ForeignKey(Document, null=True, on_delete=models.SET_NULL)
 
 
+class TenantInfo(models.Model):
+    key = models.CharField(max_length=128)
+    client_key = models.CharField(max_length=128, unique=True)
+    shared_secret = models.CharField(max_length=128)
+
+
 
 

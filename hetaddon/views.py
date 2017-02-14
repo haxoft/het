@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404
 
 import binascii
 import json
+from hetaddon.auth.authManager import AuthManager
+import atlassian_jwt
 
 #  nasty, remove
 mocked = False
@@ -21,6 +23,8 @@ mocked = False
 
 @ensure_csrf_cookie
 def index(request):
+
+    auth_and_save_user(request)
 
     global mocked
 
@@ -41,6 +45,15 @@ def index(request):
 
     return render(request, 'addon/index.html', context)
 
+
+def auth_and_save_user(request):
+    auth_manager = AuthManager()
+    try:
+        client_key = auth_manager.authenticate(request.method, request.get_full_path())
+        print("Client was successfully authenticated. Client key:" + client_key)
+    except atlassian_jwt.DecodeError:
+        print("Authentication failed!")
+        pass
 
 #################################################################################################################
 #####
