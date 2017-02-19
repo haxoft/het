@@ -5,7 +5,7 @@ from django.utils import timezone
 
 import base64
 
-from hetaddon.models import *
+from hetaddon.models.model import *
 import json
 
 

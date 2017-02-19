@@ -1,6 +1,6 @@
 from datetime import timezone
 from django.utils import timezone
-from .models import *
+from hetaddon.models.model import *
 import psycopg2
 import logging
 
@@ -18,7 +18,8 @@ def mock_data():
     eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=eu_comm_folder)
     eu_iot_folder = Folder.objects.create(name="EU_IOT", parent_folder=eu_comm_folder)
 
-    user = User.objects.create(name="username", email="mail@mail.com")
+    user = User.objects.create(name="admin", email="mail@mail.com")
+    ExternalPlatform.objects.create(platform_name='atl', user_ext_id='admin', user=user)
 
     eu_leds2014_project = Project.objects.create(name="LEDS_2014", created=timezone.now(), folder=eu_leds_folder)
     eu_leds2016_project = Project.objects.create(name="LEDS_2016", created=timezone.now(), folder=eu_leds_folder)

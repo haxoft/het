@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from . import views
+from hetaddon.views import views
 from hetaddon.auth import authView
 
 urlpatterns = [

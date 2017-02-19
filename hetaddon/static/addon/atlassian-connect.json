@@ -2,7 +2,7 @@
      "name": "HXT",
      "description": "Haxoft Extraction Tool",
      "key": "de.haxoft.hxt",
-     "baseUrl": "https://19bdcff7.ngrok.io/",
+     "baseUrl": "https://83ed87e1.ngrok.io/",
      "vendor": {
          "name": "Haxoft",
          "url": "http://haxoft.de"

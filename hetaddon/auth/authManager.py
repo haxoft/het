@@ -1,9 +1,7 @@
 import atlassian_jwt
-from hetaddon.models import TenantInfo
+from hetaddon.models.model import TenantInfo, ExternalPlatform, User
 import logging
 import jwt
-
-from hetaddon.models import ExternalPlatform, User
 
 log = logging.getLogger('django')
 

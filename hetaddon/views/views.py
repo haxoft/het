@@ -1,14 +1,13 @@
-from django.shortcuts import render
-from .data import *
-from django.utils import timezone
-from django.http import *
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.shortcuts import get_object_or_404
-
 import binascii
 import json
+
+from django.http import *
+from django.shortcuts import get_object_or_404
+from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
+
 from hetaddon.auth.authManager import AuthManager
-import logging
+from hetaddon.models.data import *
 
 #  nasty, remove
 mocked = False
@@ -145,11 +144,12 @@ def get_folderstructure_json(request, id=None):
         add_projects_to_folder_structure(project_list, project)
     else:
 
-        # TODO return only folders that belong to user in the session
         user_context = request.session['user']
         log.info("Found user session:" + str(user_context))
 
-        top_folders = list(Folder.objects.filter(parent_folder=None))
+        user = User.objects.get(externalplatform__user_ext_id=user_context["userKey"])
+        top_folders = list(Folder.objects.filter(project__membership__user_id=user.id, parent_folder=None))
+
         top_folders.sort(key=lambda f: f.pk)
         for folder in top_folders:
             folder_dict = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
