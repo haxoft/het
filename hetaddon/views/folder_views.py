@@ -91,8 +91,11 @@ def post_folder(request):
         root = get_root_folder(parent_folder)
         if root.rootfolder.owner.id != user.id:
             return HttpResponse(('Unauthorized! Parent folder [' + str(parent_folder.id) + '] is not yours!'), status=401)
+        else:
+            Folder.objects.create(name=data["name"], parent_folder=parent_folder)
+    else:  # is a root folder
+        RootFolder.objects.create(name=data["name"], parent_folder=None, owner=user)
 
-    Folder.objects.create(name=data["name"], parent_folder=parent_folder)
     return HttpResponse("Folder successfully created", status=201)
 
 

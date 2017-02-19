@@ -142,6 +142,7 @@ class FolderViews(TestCase):
         self.assertEquals(resp.status_code, 201)
         folders_list = list(Folder.objects.all())
         self.assertTrue(len(folders_list) == 1)
+        self.assertEquals(user, folders_list[0].rootfolder.owner)
 
         """ Test that an error is returned on missing required name parameter """
         resp = self.client.post('/hxt/api/folders', json.dumps({'name': '', 'parent_folder_id': ''}),
