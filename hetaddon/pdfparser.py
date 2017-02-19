@@ -4,35 +4,37 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfpage import PDFTextExtractionNotAllowed
 from pdfminer.pdfinterp import PDFResourceManager
 from pdfminer.pdfinterp import PDFPageInterpreter
-from pdfminer.pdfdevice import PDFDevice
-from pdfminer.layout import LAParams
 from pdfminer.converter import PDFPageAggregator
+from pdfminer.layout import *
+import tempfile
+from typing import List
 
-def parsePdf(path):
-    # Open a PDF file.
-    fp = open(path, 'rb')
-    # Create a PDF parser object associated with the file object.
-    parser = PDFParser(fp)
-    # Create a PDF document object that stores the document structure.
-    # Supply the password for initialization.
-    document = PDFDocument(parser)
-    # Check if the document allows text extraction. If not, abort.
-    if not document.is_extractable:
-        raise PDFTextExtractionNotAllowed
-    # Create a PDF resource manager object that stores shared resources.
-    rsrcmgr = PDFResourceManager()
-    # Create a PDF device object.
-    device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
-    # Create a PDF interpreter object.
-    interpreter = PDFPageInterpreter(rsrcmgr, device)
-    # Process each page contained in the document.
-    for page in PDFPage.create_pages(document):
-        interpreter.process_page(page)
-        layout = device.get_result()
-        for element in layout:
-            print(element)
-    outlines = document.get_outlines()
-    for (level,title,dest,a,se) in outlines:
-        print(level, title, dest)
 
-parsePdf("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC1/VP-2016-001.pdf")
+class PdfParser:
+    def __init__(self, document):
+        file = tempfile.SpooledTemporaryFile(max_size=document.size, mode="rb")
+        file.write(document.content)
+        parser = PDFParser(file)
+        self.document = PDFDocument(parser)
+        if not self.document.is_extractable:
+            raise PDFTextExtractionNotAllowed
+
+    def get_pages(self) -> List[LTPage]:
+        # Create a PDF resource manager object that stores shared resources.
+        rsrcmgr = PDFResourceManager()
+        # Create a PDF device object.
+        device = PDFPageAggregator(rsrcmgr, laparams=LAParams())
+        # Create a PDF interpreter object.
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+        # Process each page contained in the document.
+        pages = []
+        for page in PDFPage.create_pages(self.document):
+            interpreter.process_page(page)
+            page_layout = device.get_result()
+            pages.append(page_layout)
+        return pages
+
+    def get_outlines(self):
+        outlines = self.document.get_outlines()
+        for (level,title,dest,a,se) in outlines:
+            print(level, title, dest)
