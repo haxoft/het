@@ -26,31 +26,42 @@ class ExternalPlatform(models.Model):
 class Folder(models.Model):
     name = models.CharField(max_length=128)
     parent_folder = models.ForeignKey("self", on_delete=models.CASCADE, null=True)
+    projects = models.ManyToManyField('Project', through='ProjectFolder')
 
     def __str__(self):
-        parent_folder = ", parentFolder:" + ("NULL" if (self.parent_folder is None) else str(self.parent_folder.id))
-        return "{ name:" + self.name + parent_folder + " }"
+        return "{ name:" + self.name + ", parentFolder:" + str(self.parent_folder.id if self.parent_folder is not None else "None") + " }"
 
 
-class Section(models.Model):
-    name = models.CharField(max_length=128)
-    project = models.ForeignKey('Project', on_delete=models.CASCADE)
+class RootFolder(Folder):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{ name:" + self.name + ", owner:" + str(self.owner.id) + "}"
 
 
 class Project(models.Model):
     name = models.CharField(max_length=128)
     created = models.DateTimeField()
     members = models.ManyToManyField(User, through='Membership')
-    folder = models.ForeignKey(Folder, on_delete=models.CASCADE)
 
     def __str__(self):
         return "{ name:" + self.name + ", folder:" + str(self.folder.id) + " }"
+
+
+class ProjectFolder(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    folder = models.ForeignKey(Folder, on_delete=models.CASCADE)
 
 
 class Membership(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     #  some other fields might be added, e.g. role, date, etc.
+
+
+class Section(models.Model):
+    name = models.CharField(max_length=128)
+    project = models.ForeignKey('Project', on_delete=models.CASCADE)
 
 
 class Document(models.Model):

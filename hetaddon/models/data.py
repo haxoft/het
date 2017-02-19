@@ -11,25 +11,31 @@ def mock_data():
     clear_db()
     log.info("Mocking Data")
 
-    eu_comm_folder = Folder.objects.create(name="European Commission", parent_folder=None)
-    Folder.objects.create(name="Deutsche Forschungsgemeinschaft", parent_folder=None)
-    Folder.objects.create(name="Deutscher Akademischer Austauschdienst ", parent_folder=None)
-
-    eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=eu_comm_folder)
-    eu_iot_folder = Folder.objects.create(name="EU_IOT", parent_folder=eu_comm_folder)
-
     user = User.objects.create(name="admin", email="mail@mail.com")
     ExternalPlatform.objects.create(platform_name='atl', user_ext_id='admin', user=user)
 
-    eu_leds2014_project = Project.objects.create(name="LEDS_2014", created=timezone.now(), folder=eu_leds_folder)
-    eu_leds2016_project = Project.objects.create(name="LEDS_2016", created=timezone.now(), folder=eu_leds_folder)
-    eu_iot_project = Project.objects.create(name="IOT_2010", created=timezone.now(), folder=eu_iot_folder)
-    eu_h2020_project = Project.objects.create(name="H2020_2012", created=timezone.now(), folder=eu_comm_folder)
+    eu_comm_root_folder = RootFolder.objects.create(name="European Commission", parent_folder=None, owner=user)
+    RootFolder.objects.create(name="Deutsche Forschungsgemeinschaft", parent_folder=None, owner=user)
+    RootFolder.objects.create(name="Deutscher Akademischer Austauschdienst ", parent_folder=None, owner=user)
+
+    eu_leds_folder = Folder.objects.create(name="EU_LEDS", parent_folder=eu_comm_root_folder)
+    eu_iot_folder = Folder.objects.create(name="EU_IOT", parent_folder=eu_comm_root_folder)
+
+    eu_leds2014_project = Project.objects.create(name="LEDS_2014", created=timezone.now())
+    eu_leds2016_project = Project.objects.create(name="LEDS_2016", created=timezone.now())
+    ProjectFolder.objects.create(folder=eu_leds_folder, project=eu_leds2014_project)
+    ProjectFolder.objects.create(folder=eu_leds_folder, project=eu_leds2016_project)
+
+    eu_iot_project = Project.objects.create(name="IOT_2010", created=timezone.now())
+    ProjectFolder.objects.create(folder=eu_iot_folder, project=eu_iot_project)
+
+    eu_h2020_project = Project.objects.create(name="H2020_2012", created=timezone.now())
+    ProjectFolder.objects.create(folder=eu_comm_root_folder, project=eu_h2020_project)
 
     eu_leds2014_section_general = Section.objects.create(name="General", project=eu_leds2014_project)
     eu_leds2014_call = Document.objects.create(name="Call.pdf", type="pdf", size=1353653, status="None",
                                                section=eu_leds2014_section_general, category='cal')
-    eu_leds2014_template = Document.objects.create(name="Template.pdf", type="pdf", size=3786, status="None",
+    Document.objects.create(name="Template.pdf", type="pdf", size=3786, status="None",
                                                    section=eu_leds2014_section_general, category='tem')
 
     title_req = Requirement.objects.create(name="Title", project=eu_leds2014_project)
@@ -67,12 +73,15 @@ def clear_db():
     Document.objects.all().delete()
     ExternalPlatform.objects.all().delete()
     Folder.objects.all().delete()
+    RootFolder.objects.all().delete()
+    ProjectFolder.objects.all().delete()
     Membership.objects.all().delete()
     Project.objects.all().delete()
     Requirement.objects.all().delete()
     RequirementValue.objects.all().delete()
     Section.objects.all().delete()
     User.objects.all().delete()
+    # dont add 'TenantInfo' - would require a new addon install
 
     try:
         db_connection = psycopg2.connect("dbname='hetdb' user='postgres' host='localhost' password='postgres'")
@@ -88,6 +97,8 @@ def clear_db():
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_requirementvalue_id_seq RESTART WITH 1""")
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_section_id_seq RESTART WITH 1""")
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_user_id_seq RESTART WITH 1""")
+        db_cursor.execute("""ALTER SEQUENCE public.hetaddon_projectfolder_id_seq RESTART WITH 1""")
+        db_cursor.execute("""ALTER SEQUENCE public.hetaddon_rootfolder_id_seq RESTART WITH 1""")
     except:
         print("I am unable to connect to the database")
 
