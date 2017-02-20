@@ -6,6 +6,7 @@ from elasticsearch.helpers import *
 from hetaddon.pdfparser import PdfParser
 import os
 import re
+import math
 
 
 es = Elasticsearch()
@@ -45,7 +46,7 @@ def do_standard_extraction(documents: list):
             page_elements = []
             for element in page:
                 if hasattr(element, "get_text"):
-                    element_text = element.get_text().lower()
+                    element_text = element.get_text()
                 else:
                     element_text = ""
                 page_element = {"text": element_text, "x":element.x0, "y": element.y0, "width": element.width,
@@ -56,7 +57,7 @@ def do_standard_extraction(documents: list):
             for element in page_elements:
                 element_text = element["text"]
                 element["plain_content_index"] = plain_content_index
-                element["length"]: len(element_text)
+                element["text_length"] = len(element_text)
                 action = {
                     "index": {
                         "_index": index_name,
@@ -106,23 +107,72 @@ def extract_important_dates(index_name, plain_content):
     ]}}})
     date_matches = get_date_matches(plain_content)
 
+    potential_deadlines = get_result_matches(deadline_results, date_matches, 250)
+    potential_evaluation_dates = get_result_matches(evaluation_results, date_matches, 250)
+    potential_signature_dates = get_result_matches(signature_results, date_matches, 250)
+    potential_applicant_information_dates = get_result_matches(applicant_information_results, date_matches, 250)
+    potential_publication_dates = get_result_matches(publication_results, date_matches, 250)
+
+    potential_deadlines.sort(key=lambda rm: rm["score"] / rm["difference"], reverse=True)
+    potential_evaluation_dates.sort(key=lambda rm: rm["score"] / rm["difference"], reverse=True)
+    potential_signature_dates.sort(key=lambda rm: rm["score"] / rm["difference"], reverse=True)
+    potential_applicant_information_dates.sort(key=lambda rm: rm["score"] / rm["difference"], reverse=True)
+    potential_publication_dates.sort(key=lambda rm: rm["score"] / rm["difference"], reverse=True)
+
+    print()
+    print("Deadline")
+    for pot in potential_deadlines:
+        print(plain_content[pot["match"][0]:pot["match"][1]])
+    print()
+    print("Evaluation")
+    for pot in potential_evaluation_dates:
+        print(plain_content[pot["match"][0]:pot["match"][1]])
+    print()
+    print("Signature")
+    for pot in potential_signature_dates:
+        print(plain_content[pot["match"][0]:pot["match"][1]])
+    print()
+    print("Applicant Information")
+    for pot in potential_applicant_information_dates:
+        print(plain_content[pot["match"][0]:pot["match"][1]])
+    print()
+    print("Publication")
+    for pot in potential_publication_dates:
+        print(plain_content[pot["match"][0]:pot["match"][1]])
+
     return
 
 
 def extract_budget(index_name, plain_content):
-    total_budget_matches = es.search(index=index_name, body={"query": {"bool": {"must": [
+    total_budget_results = es.search(index=index_name, body={"query": {"bool": {"must": [
         {"match": {"text": "total budget"}}
     ]}}})
-    grant_amount_matches = es.search(index=index_name, body={"query": {"bool": {"should": [
+    grant_amount_results = es.search(index=index_name, body={"query": {"bool": {"should": [
         {"match": {"text": "grant"}},
         {"match": {"text": "budget"}},
         {"match": {"text": "between"}}
     ]}}})
     money_matches = get_money_matches(plain_content)
+
+    potential_total_budgets = get_result_matches(total_budget_results, money_matches, 250)
+    potential_grant_amounts = get_result_matches(grant_amount_results, money_matches, 250)
+
+    potential_total_budgets.sort(key=lambda rm: rm["score"] / rm["difference"], reverse=True)
+    potential_grant_amounts.sort(key=lambda rm: rm["score"] / rm["difference"], reverse=True)
+
+    print()
+    print("Total Budget")
+    for pot in potential_total_budgets:
+        print(plain_content[pot["match"][0]:pot["match"][1]])
+    print()
+    print("Grant Amount")
+    for pot in potential_grant_amounts:
+        print(plain_content[pot["match"][0]:pot["match"][1]])
     return
 
 
 def get_date_matches(plain_content):
+    plain_content = plain_content.lower()
     month = "(january|february|march|april|may|june|july|august|september|october|november|december)"
     short_month = "(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)"
     month_number = "(0?[1-9]|1[0-2])"
@@ -155,6 +205,7 @@ def get_date_matches(plain_content):
 
 
 def get_money_matches(plain_content):
+    plain_content = plain_content.lower()
     currency = "(eur|€|\$)"
     amount = "([1-9][0-9]{0,2}(.?[0-9]{3})+)"
 
@@ -177,6 +228,28 @@ def get_match_positions(regex, text):
     return results
 
 
+def get_result_matches(search_results, match_positions, maximum_difference) -> list:
+    if len(match_positions) == 0:
+        return []
+    result_matches = []
+    for result in search_results["hits"]["hits"]:
+        for date_match in match_positions:
+            result_match_difference = get_result_match_difference(result, date_match)
+            if result_match_difference <= maximum_difference:
+                result_matches.append({"match": date_match, "score": result["_score"], "difference": result_match_difference})
+    return result_matches
+
+
+def get_result_match_difference(result, match) -> float:
+    source = result["_source"]
+    result_start = source["plain_content_index"]
+    result_length = source["text_length"]
+    difference = math.fabs(result_start - match[1]) if match[1] < result_start else match[0] - result_start - result_length
+    if difference < 0:
+        difference = 0.1
+    return difference
+
+
 class SearchError(Exception):
     def __init__(self, value):
         self.value = value
@@ -188,7 +261,8 @@ class MicroMock(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
-path = "C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC1/VP-2016-001.pdf"
+#path = "C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC1/VP-2016-001.pdf"
+path = "C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC2/Call VS-2016-015 - EN.pdf"
 file = open(path, "rb")
 content = file.read()
 size = os.path.getsize(path)
