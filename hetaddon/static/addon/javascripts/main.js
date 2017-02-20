@@ -1,6 +1,5 @@
 var apiUrlPrefix = "api/";
 var app = {};
-var IN_IFRAME = true; //set to false when testing outside Atlassian
 
 function showSuccessMessage(message) {
     console.log(message);

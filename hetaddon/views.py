@@ -13,6 +13,7 @@ import logging
 #  nasty, remove
 mocked = False
 log = logging.getLogger('django')
+inside_atlassian = False
 
 
 #################################################################################################################
@@ -33,7 +34,7 @@ def index(request):
         mocked = True
 
     AuthManager.authenticate_user(request)
-    return render(request, 'addon/index.html', {})
+    return render(request, 'addon/index.html', {"in_frame": inside_atlassian})
 
 
 #################################################################################################################
