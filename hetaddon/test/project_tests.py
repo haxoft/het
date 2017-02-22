@@ -1,7 +1,7 @@
 import logging
 from django.test import TestCase
 from django.utils import timezone
-
+from hetaddon.views import utils
 from hetaddon.models.model import *
 import json
 
@@ -122,7 +122,7 @@ class ProjectViews(TestCase):
         self.assertTrue(len(projs_list) == 1)
 
         self.assertEqual(projs_list[0].name, test_proj_dict["name"])
-        folder = get_folder_of_project(projs_list[0], user)
+        folder = utils.get_folder_of_project(projs_list[0], user)
         self.assertEqual(str(folder.id), test_proj_dict["parent_folder_id"])
         # does the user have a membership in the project?
         memb = Membership.objects.filter(user=user, project=projs_list[0])
@@ -178,7 +178,7 @@ class ProjectViews(TestCase):
         updated_proj = Project.objects.get(pk=test_project.id)
         self.assertEquals(proj_update['name'], updated_proj.name)
 
-        proj_fold = get_folder_of_project(updated_proj, user)
+        proj_fold = utils.get_folder_of_project(updated_proj, user)
         self.assertEquals(proj_update['parent_folder_id'], str(proj_fold.id))
 
         """ Test that an error is returned on non-existing parent folder ID """
@@ -236,35 +236,3 @@ class ProjectViews(TestCase):
         session['user'] = {'userKey': user_ext_id}
         session.save()
         return user
-
-
-def get_folder_of_project(project, user):
-    log.debug('finding the folder of project:' + str(project))
-    user_folders_list = get_user_folders(user)
-    for i in range(0, len(user_folders_list)):
-        project_folder_set = ProjectFolder.objects.filter(project=project, folder=user_folders_list[i])
-        if project_folder_set:
-            if len(project_folder_set) > 1:
-                log.error("Found multiple folders for project! Found ProjectFolders:" + str(project_folder_set))
-                return None
-            log.debug("Found folder:" + str(project_folder_set[0].folder.id) + ", for project:" + str(project.id))
-            return project_folder_set[0].folder
-    log.error("Found no folder for project! Project:" + str(project))
-    return None
-
-
-def get_user_folders(user):
-    user_root_folders = RootFolder.objects.filter(owner=user)
-    user_folders = []
-    for root_folder in user_root_folders:
-        # log.debug("Appending root folder:" + str(root_folder))
-        user_folders.append(root_folder)
-        add_subfolders(user_folders, root_folder)
-    return user_folders
-
-
-def add_subfolders(subfolders_list, parent_folder):
-    subfolders_set = parent_folder.folder_set.all()
-    for i in range(0, len(subfolders_set)):
-        subfolders_list.append(subfolders_set[i])
-        add_subfolders(subfolders_list, subfolders_set[i])
