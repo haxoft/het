@@ -31,8 +31,6 @@ def get_folderstructure_json(request, id=None):
         add_projects_to_folder_structure(project_list, project)
     else:
 
-        # print("Found user session:" + str(user_session))
-        # if a user is not found for the given key -
         user = User.objects.get(externalplatform__user_ext_id=user_session["userKey"])
         root_folders = list(RootFolder.objects.filter(owner_id=user.id))
         # print("found root folders:" + str(root_folders))

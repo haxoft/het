@@ -7,7 +7,7 @@ import json
 
 class FolderViews(TestCase):
 
-    """ Test that all folders are retrieved with their corresponding structure """
+    """ Test that all folders of a user are retrieved with their corresponding structure """
 
     def test_get_folders_structure(self):
 

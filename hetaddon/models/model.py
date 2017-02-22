@@ -29,14 +29,14 @@ class Folder(models.Model):
     projects = models.ManyToManyField('Project', through='ProjectFolder')
 
     def __str__(self):
-        return "{ name:" + self.name + ", parentFolder:" + str(self.parent_folder.id if self.parent_folder is not None else "None") + " }"
+        return "{ id:" + str(self.id) + ", name:" + str(self.name) + ", parentFolder:" + str(self.parent_folder.id if self.parent_folder is not None else "None") + " }"
 
 
 class RootFolder(Folder):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return "{ name:" + self.name + ", owner:" + str(self.owner.id) + "}"
+        return "{ id:" + str(self.id) + ", name:" + str(self.name) + ", owner:" + str(self.owner.id) + "}"
 
 
 class Project(models.Model):
@@ -45,12 +45,15 @@ class Project(models.Model):
     members = models.ManyToManyField(User, through='Membership')
 
     def __str__(self):
-        return "{ name:" + self.name + ", folder:" + str(self.folder.id) + " }"
+        return "{ name:" + self.name + ", # of members:" + str(len(list(self.members.all()))) + " }"
 
 
 class ProjectFolder(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "{ project:" + str(self.project_id) + ", folder:" + str(self.folder_id) + " }"
 
 
 class Membership(models.Model):
