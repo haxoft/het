@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
 
-from hetaddon.auth.authManager import AuthManager
+from hetaddon.auth.auth_manager import AuthManager
 
 log = logging.getLogger('django')
 

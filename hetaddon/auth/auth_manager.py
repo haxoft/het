@@ -1,9 +1,7 @@
 import atlassian_jwt
-from hetaddon.models import TenantInfo
+from hetaddon.models.model import TenantInfo, ExternalPlatform, User
 import logging
 import jwt
-
-from hetaddon.models import ExternalPlatform, User
 
 log = logging.getLogger('django')
 
@@ -30,7 +28,14 @@ class AuthManager(atlassian_jwt.Authenticator):
                                       shared_secret=tenant_info_dict["sharedSecret"])
 
     @staticmethod
-    def authenticate_user(request):
+    def authenticate_user(request, inside_atlassian):
+
+        if not inside_atlassian:  # skip authentication and set the session for the mocked user (from data.py)
+            user = User.objects.get(externalplatform__user_ext_id='admin')
+            user_mock_context = {"displayName": user.name, "userKey": "admin"}
+            print("mocking user session for user:" + str(user))
+            request.session['user'] = user_mock_context
+            return
 
         auth_manager = AuthManager()
         try:
