@@ -91,7 +91,7 @@ def requirement_handler(request, id=None):
         return HttpResponseBadRequest("Found undefined required ID parameter")
     elif request.method == 'POST':
         if id:
-            return HttpResponseBadRequest("Found undefined required ID parameter")
+            return HttpResponseBadRequest("Wrong request! Forbidden ID parameter")
         return post_requirement(request)
     elif request.method == 'PUT':
         return put_requirement(request, id)
@@ -102,8 +102,12 @@ def requirement_handler(request, id=None):
 
 def requirement_value_handler(request, id=None):
     if request.method == 'GET':
-        return get_requirement_value_json(request, id)
+        if id:
+            return get_requirement_value_json(request, id)
+        return HttpResponseBadRequest("Found undefined required ID parameter")
     if request.method == 'POST':
+        if id:
+            return HttpResponseBadRequest("Wrong request! Forbidden ID parameter")
         return post_requirement_value(request)
     if request.method == 'PUT':
         return put_requirement_value(request, id)

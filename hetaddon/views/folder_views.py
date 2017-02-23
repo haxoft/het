@@ -1,6 +1,7 @@
 from django.http import *
 from django.shortcuts import get_object_or_404
 from hetaddon.models.data import *
+from . import utils
 import json
 
 log = logging.getLogger('django')
@@ -8,9 +9,9 @@ log = logging.getLogger('django')
 
 def get_folderstructure_json(request, id=None):
 
-    if 'user' not in request.session:
+    user = utils.get_user_from_session(request)
+    if user is None:
         return HttpResponse('Unauthorized', status=401)
-    user_session = request.session['user']
 
     result = []
     # this branch is never called?
@@ -31,7 +32,6 @@ def get_folderstructure_json(request, id=None):
         add_projects_to_folder_structure(project_list, project)
     else:
 
-        user = User.objects.get(externalplatform__user_ext_id=user_session["userKey"])
         root_folders = list(RootFolder.objects.filter(owner_id=user.id))
         # print("found root folders:" + str(root_folders))
 
@@ -71,10 +71,9 @@ def add_folders_to_folder_structure(list, folder_set):
 
 def post_folder(request):
 
-    if 'user' not in request.session:
+    user = utils.get_user_from_session(request)
+    if user is None:
         return HttpResponse('Unauthorized', status=401)
-    user_session = request.session['user']
-    user = User.objects.get(externalplatform__user_ext_id=user_session["userKey"])
 
     body_unicode = request.body.decode('utf-8')
     print("Received folder:" + body_unicode)
@@ -107,10 +106,9 @@ def get_root_folder(folder):
 
 def put_folder(request, id):
 
-    if 'user' not in request.session:
+    user = utils.get_user_from_session(request)
+    if user is None:
         return HttpResponse('Unauthorized', status=401)
-    user_session = request.session['user']
-    # user = User.objects.get(externalplatform__user_ext_id=user_session["userKey"])
 
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
@@ -127,7 +125,8 @@ def put_folder(request, id):
 
 def delete_folder(request, id):
 
-    if 'user' not in request.session:
+    user = utils.get_user_from_session(request)
+    if user is None:
         return HttpResponse('Unauthorized', status=401)
 
     user_session = request.session['user']
