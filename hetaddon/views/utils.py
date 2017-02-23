@@ -39,3 +39,21 @@ def add_subfolders(subfolders_list, parent_folder):
     for i in range(0, len(subfolders_set)):
         subfolders_list.append(subfolders_set[i])
         add_subfolders(subfolders_list, subfolders_set[i])
+
+
+def user_owns_section(user, section):
+
+    user_projects = Project.objects.filter(membership__user=user)
+    for user_project in user_projects:
+        if section.project_id == user_project.id:
+            return True
+    return False
+
+
+def user_owns_document(user, document):
+
+    user_projects = Project.objects.filter(membership__user=user)
+    for user_project in user_projects:
+        if document.section.project.id == user_project.id:
+            return True
+    return False
