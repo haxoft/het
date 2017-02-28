@@ -18,7 +18,7 @@ def get_section_json(request, id):
     if not utils.user_owns_section(user, section):
         return HttpResponse('Section ' + str(id) + " is not yours!", status=401)
 
-    section_documents = section.document_set
+    section_documents = list(section.document_set.all())
     section_documents.sort(key=lambda doc: doc.pk)
 
     documents_json_list = [{"id": document.id, "name": document.name, "type": document.type,
@@ -93,11 +93,12 @@ def get_sections_of_project_json(request, id):
     project = get_object_or_404(Project, pk=id)
     get_object_or_404(project.members.all(), pk=user.id)
 
-    sections = project.section_set
+    sections = list(project.section_set.all())
+    sections.sort(key=lambda sec: sec.id)
 
     sections_json_list = []
     for section in sections:
-        section_documents = list(section.document_set)
+        section_documents = list(section.document_set.all())
         section_documents.sort(key=lambda doc: doc.pk)
         documents_json_list = [{"id": document.id, "name": document.name, "type": document.type,
                                 "size": document.size, "status": document.status, "category": document.category,

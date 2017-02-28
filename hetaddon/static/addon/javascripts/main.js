@@ -110,7 +110,7 @@ function getCookie(name) {
 }
 
 function refreshSections() {
-    console.log("Synchronizing Documents");
+    console.log("Synchronizing Sections");
     app.sections.fetch({reset: true});
 }
 
@@ -125,12 +125,15 @@ function refreshRequirements() {
 }
 
 function refreshAll(){
-    refreshDocuments();
+    refreshSections();
     refreshProjectFolders();
     refreshRequirements();
 }
 
 (function() {
+    $.ajaxSetup({
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    });
 
     initModels();
     initTemplates();
@@ -198,7 +201,7 @@ function initModels() {
     app.Section = Backbone.Model.extend({
         initialize: function() {
             var documents = this.get("documents");
-            if (!Array.isArray(folders)) {
+            if (!Array.isArray(documents)) {
                 documents = [];
             }
             this.set({documents: new app.DocumentList(documents)});
