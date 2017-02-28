@@ -85,23 +85,3 @@ def delete_document(request, id):
 
     document.delete()
     return HttpResponse("Document " + str(id) + " was successfully deleted", status=200)
-
-
-def get_documents_of_project_json(request, id):
-
-    user = utils.get_user_from_session(request)
-    if user is None:
-        return HttpResponse('Unauthorized', status=401)
-
-    # check if the project exists, return error otherwise
-    project = get_object_or_404(Project, pk=id)
-    memb = get_object_or_404(project.members.all(), pk=user.id)
-
-    documents_list = list(Document.objects.filter(section__project_id=id))
-    documents_list.sort(key=lambda doc: doc.pk)
-    documents_json_list = [{"id": documents_list[i].id, "name": documents_list[i].name, "type": documents_list[i].type,
-                            "size": documents_list[i].size, "status": documents_list[i].status,
-                            "category": documents_list[i].category, "section_id": documents_list[i].section_id}
-                           for i in range(0, len(documents_list))]
-
-    return JsonResponse(documents_json_list, safe=False)

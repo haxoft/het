@@ -8,6 +8,7 @@ from .folder_views import *
 from .project_views import *
 from .document_views import *
 from .requirement_views import *
+from .section_views import *
 
 #  nasty, remove
 mocked = False
