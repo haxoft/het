@@ -16,6 +16,6 @@ urlpatterns = [
     url(r'^api/requirements$', requirement_handler, name='requirements'),
     url(r'^api/requirements/(?P<id>[0-9]+)$', requirement_handler, name='requirements'),
     url(r'^api/values/(?P<id>[0-9]+)$', requirement_value_handler, name='requirementValues'),
-    url(r'^api/projects/(?P<id>[0-9]+)/documents$', get_documents_of_project_json, name='projectDocuments'),
+    url(r'^api/projects/(?P<id>[0-9]+)/sections$', get_sections_of_project_json, name='projectSections'),
     url(r'^api/projects/(?P<id>[0-9]+)/requirements$', get_requirements_of_project_json, name='projectRequirements')
 ]

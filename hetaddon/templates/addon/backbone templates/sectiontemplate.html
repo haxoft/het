@@ -1,0 +1,32 @@
+<script type="text/template" id="folder_template">
+    <div class="mb-10">
+        <form class="aui pt-10 mb-neg-20">
+            <div class="field-group">
+                <label for="section_<%= section.get('id') %>_name" class="pt-0"><h3>Section</h3></label>
+                <input class="text" type="text" id="section_<%= section.get('id') %>_name"
+                    name="section_<%= section.get('id') %>_name" title="Section Name"
+                    value="<%= section.get('name') %>">
+            </div>
+        </form>
+        <table id="section_<%= section.get('id') %>_documents_table" class="aui">
+            <thead>
+                <tr>
+                    <th id="name">Name</th>
+                    <th id="type">Type</th>
+                    <th id="size">Size</th>
+                    <th id="category">Category</th>
+                    <th id="remove"></th>
+                </tr>
+            </thead>
+            <tbody id="section_<%= section.get('id') %>_document_table_rows">
+                <% section.get('documents').each(function(document) { %>
+                    <%= app.DocumentRowTemplate({document: document}) %>
+                <% }); %>
+            </tbody>
+        </table>
+        <button class="aui-button" onclick="addDocument(<%= section.get('id') %>)">
+            <span class="aui-icon aui-icon-small aui-iconfont-doc"></span>
+            Add Document
+        </button>
+    </div>
+</script>

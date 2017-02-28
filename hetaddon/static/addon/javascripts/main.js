@@ -109,9 +109,9 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function refreshDocuments() {
+function refreshSections() {
     console.log("Synchronizing Documents");
-    app.documents.fetch({reset: true});
+    app.sections.fetch({reset: true});
 }
 
 function refreshProjectFolders() {
@@ -135,7 +135,7 @@ function refreshAll(){
     initModels();
     initTemplates();
     initCollectionInstances();
-    initDocumentTable();
+    initSections();
     initProjects();
     initFolderList();
     initRequirements();
@@ -195,6 +195,27 @@ function setUserKey(done) {
 }
 
 function initModels() {
+    app.Section = Backbone.Model.extend({
+        initialize: function() {
+            var documents = this.get("documents");
+            if (!Array.isArray(folders)) {
+                documents = [];
+            }
+            this.set({documents: new app.DocumentList(documents)});
+        },
+
+        defaults: {
+            id: 0,
+            name: ""
+        },
+        url: apiUrlPrefix + "sections"
+    });
+
+    app.SectionList = Backbone.Collection.extend({
+        model: app.Section,
+        url: apiUrlPrefix + "projects/1/sections"
+    });
+
     app.Document = Backbone.Model.extend({
         defaults: {
             id: 0,
@@ -208,7 +229,7 @@ function initModels() {
 
     app.DocumentList = Backbone.Collection.extend({
         model: app.Document,
-        url: apiUrlPrefix + "projects/1/documents"
+        url: apiUrlPrefix + "sections/1/documents"
     });
 
     app.Project = Backbone.Model.extend({
@@ -262,7 +283,7 @@ function initModels() {
 
     app.RequirementValueList = Backbone.Collection.extend({
         model: app.RequirementValue
-    })
+    });
 
     app.Requirement = Backbone.Model.extend({
         initialize: function() {
@@ -286,6 +307,7 @@ function initModels() {
 }
 
 function initTemplates() {
+    app.SectionTemplate = _.template($("#section_template").html());
     app.DocumentRowTemplate = _.template($("#document_row_template").html());
     app.FolderOptionTemplate = _.template($("#folder_option_template").html());
     app.FolderTemplate = _.template($("#folder_template").html());
@@ -294,31 +316,31 @@ function initTemplates() {
 }
 
 function initCollectionInstances() {
-    app.documents = new app.DocumentList();
+    app.sections = new app.SectionList();
     app.projectFolders = new app.FolderList();
     app.requirements = new app.RequirementList();
 }
 
-function initDocumentTable() {
-    app.DocumentsView = Backbone.View.extend({
-        el: "#document_table_rows",
+function initSections() {
+    app.SectionsView = Backbone.View.extend({
+        el: "#sections",
 
-        initialize: function(){
+        initialize: function() {
             var self = this;
-            app.documents.bind("reset", _.bind(self.render, self));
+            app.sections.bind("reset", _.bind(self.render, self));
             self.render();
         },
 
-        render: function(){
+        render: function() {
             var result = "";
-            app.documents.each(function(document) {
-                result += app.DocumentRowTemplate({document:document});
+            app.sections.each(function(section) {
+                result += app.SectionTemplate({section: section});
             });
             this.$el.html(result);
         }
     });
 
-    app.documentsView = new app.DocumentsView();
+    app.sectionsView = new app.SectionsView();
 }
 
 function initFolderList() {

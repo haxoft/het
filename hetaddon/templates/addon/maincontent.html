@@ -8,37 +8,14 @@
         </li>
     </ul>
     <div class="tabs-pane active-pane" id="tabs-example-first">
-        <div class="mb-10">
-            <form class="aui pt-10 mb-neg-20">
-                <div class="field-group">
-                    <label for="section_1_name" class="pt-0"><h3>Section</h3></label>
-                    <input class="text" type="text" id="section_1_name" name="section_1_name" title="Section Name">
-                </div>
-            </form>
-            <table id="documents_table" class="aui">
-                <thead>
-                    <tr>
-                        <th id="name">Name</th>
-                        <th id="type">Type</th>
-                        <th id="size">Size</th>
-                        <th id="category">Category</th>
-                        <th id="remove"></th>
-                    </tr>
-                </thead>
-                <tbody id="document_table_rows">
-                </tbody>
-            </table>
-            <button class="aui-button" onclick="addDocument()">
-                <span class="aui-icon aui-icon-small aui-iconfont-doc"></span>
-                Add Document
-            </button>
-            <input id="add_document_file" type="file" name="add_document_file" class="hidden" onchange="uploadDocument(this)" />
+        <div id="sections">
         </div>
         <button class="aui-button" onclick="addSection()">
             <span class="aui-icon aui-icon-small aui-iconfont-add"></span>
             Add Section
         </button>
     </div>
+    <input id="add_document_file" type="file" name="add_document_file" class="hidden" onchange="uploadDocument(this)" />
     <div class="tabs-pane" id="tabs-example-second">
         <form class="aui mt-20" id="requirements">
         </form>
