@@ -1,13 +1,7 @@
 <div class="aui-tabs horizontal-tabs mt-0">
-    <ul class="tabs-menu">
-        <li class="menu-item active-tab">
-            <a href="#tabs-example-first">EU_LEDS_2014 - Documents</a>
-        </li>
-        <li class="menu-item">
-            <a href="#tabs-example-second">EU_LEDS_2014 - Requirements</a>
-        </li>
+    <ul class="tabs-menu" id="tab_buttons">
     </ul>
-    <div class="tabs-pane active-pane" id="tabs-example-first">
+    <div class="tabs-pane active-pane" id="tab_documents">
         <div id="sections">
         </div>
         <button class="aui-button" onclick="addSection()">
@@ -16,7 +10,7 @@
         </button>
     </div>
     <input id="add_document_file" type="file" name="add_document_file" class="hidden" onchange="uploadDocument(this)" />
-    <div class="tabs-pane" id="tabs-example-second">
+    <div class="tabs-pane" id="tab_requirements">
         <form class="aui mt-20" id="requirements">
         </form>
     </div>

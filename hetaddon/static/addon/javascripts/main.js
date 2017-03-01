@@ -1,5 +1,6 @@
 var apiUrlPrefix = "api/";
 var app = {};
+var currentTab = null;
 
 function showSuccessMessage(message) {
     console.log(message);
@@ -125,9 +126,48 @@ function refreshRequirements() {
 }
 
 function refreshAll(){
-    refreshSections();
     refreshProjectFolders();
+    if(currentTab != null) {
+        refreshSections();
+        refreshRequirements();
+    }
+}
+
+function showTab(project_id, type) {
+    var typeEnumValue = app.TabTypeEnum[type]
+    var tabData = {project_id: project_id, type: typeEnumValue};
+    var tabsFound = app.openedTabs.where(tabData);
+    if(tabsFound.length > 1) throw "Invalid tab collection";
+    if(tabsFound.length == 1) {
+        currentTab = tabsFound[0];
+    } else {
+        var project = app.projectFolders.getProject(project_id);
+        tabData.project_name = project.get("name");
+        currentTab = new app.Tab(tabData);
+        app.openedTabs.add(currentTab);
+    }
+
+    console.log("asdf");
+    refreshSections();
     refreshRequirements();
+
+    app.tabsView.render();
+
+    var documentsTab = $("#tab_documents");
+    var requirementsTab = $("#tab_requirements");
+    var activeClass = "active-pane";
+    switch (typeEnumValue) {
+        case app.TabTypeEnum.DOCUMENTS:
+            documentsTab.addClass(activeClass);
+            requirementsTab.removeClass(activeClass);
+            break;
+        case app.TabTypeEnum.REQUIREMENTS:
+            documentsTab.removeClass(activeClass);
+            requirementsTab.addClass(activeClass);
+            break;
+        default:
+            throw "Not implemented enum value";
+    }
 }
 
 (function() {
@@ -138,6 +178,7 @@ function refreshAll(){
     initModels();
     initTemplates();
     initCollectionInstances();
+    initTabs();
     initSections();
     initProjects();
     initFolderList();
@@ -162,7 +203,6 @@ function refreshAll(){
 })();
 
 function loadConnectScript() {
-
     var getUrlParam = function (param) {
         var codedParam = (new RegExp(param + '=([^&]*)')).exec(window.location.search)[1];
         return decodeURIComponent(codedParam);
@@ -182,22 +222,44 @@ function loadConnectScript() {
 }
 
 function setUserKey(done) {
-
-    if(typeof AP !== 'undefined') {
-        AP.getUser(function (user) {
+    if (typeof AP !== 'undefined') {
+        AP.getUser(function(user) {
             console.log("Retrieved user id:" + user.id + "user key:" + user.key + ", user name:" + user.fullName);
             app.User = {key: user.key, fullName: user.fullName};
             return done();
         });
-    }else{
+    } else {
         console.log("AP is not initialized. Will try again in 2s.");
-        setTimeout(function () {
+        setTimeout(function() {
             setUserKey(done)
         }, 2000);
     }
 }
 
 function initModels() {
+    app.TabTypeEnum = {
+        DOCUMENTS: {
+            value: "DOCUMENTS",
+            toString: function() {return "Documents"}
+        },
+        REQUIREMENTS: {
+            value: "REQUIREMENTS",
+            toString: function() {return "Requirements"}
+        }
+    };
+
+    app.Tab = Backbone.Model.extend({
+        defaults: {
+            project_id: 0,
+            project_name: "",
+            type: app.TabTypeEnum.DOCUMENTS.value
+        }
+    });
+
+    app.TabList = Backbone.Collection.extend({
+        model: app.Tab
+    });
+
     app.Section = Backbone.Model.extend({
         initialize: function() {
             var documents = this.get("documents");
@@ -216,7 +278,9 @@ function initModels() {
 
     app.SectionList = Backbone.Collection.extend({
         model: app.Section,
-        url: apiUrlPrefix + "projects/1/sections"
+        url: function() {
+            return apiUrlPrefix + "projects/" + currentTab.get("project_id") + "/sections";
+        }
     });
 
     app.Document = Backbone.Model.extend({
@@ -231,8 +295,7 @@ function initModels() {
     });
 
     app.DocumentList = Backbone.Collection.extend({
-        model: app.Document,
-        url: apiUrlPrefix + "sections/1/documents"
+        model: app.Document
     });
 
     app.Project = Backbone.Model.extend({
@@ -266,12 +329,27 @@ function initModels() {
             id: 0,
             name: ""
         },
-        url: apiUrlPrefix + "folders"
+        url: apiUrlPrefix + "folders",
+
+        getProject: function(project_id) {
+            var matchingProject = this.get("projects").get(project_id);
+            if (matchingProject != null) return matchingProject;
+
+            return this.get("folders").getProject(project_id);
+        }
     });
 
     app.FolderList = Backbone.Collection.extend({
         model: app.Folder,
-        url: apiUrlPrefix + "folders"
+        url: apiUrlPrefix + "folders",
+
+        getProject: function(project_id) {
+            for(var i = 0; i < this.models.length; i++) {
+                var project = this.models[i].getProject(project_id);
+                if(project != null) return project;
+            }
+            return null;
+        }
     });
 
     app.RequirementValue = Backbone.Model.extend({
@@ -305,11 +383,14 @@ function initModels() {
 
     app.RequirementList = Backbone.Collection.extend({
         model: app.Requirement,
-        url: apiUrlPrefix + "projects/1/requirements"
+        url: function() {
+            return apiUrlPrefix + "projects/" + currentTab.get("project_id") + "/requirements";
+        }
     });
 }
 
 function initTemplates() {
+    app.TabButtonTemplate = _.template($("#tab_button_template").html());
     app.SectionTemplate = _.template($("#section_template").html());
     app.DocumentRowTemplate = _.template($("#document_row_template").html());
     app.FolderOptionTemplate = _.template($("#folder_option_template").html());
@@ -322,6 +403,29 @@ function initCollectionInstances() {
     app.sections = new app.SectionList();
     app.projectFolders = new app.FolderList();
     app.requirements = new app.RequirementList();
+    app.openedTabs = new app.TabList();
+}
+
+function initTabs() {
+    app.TabsView = Backbone.View.extend({
+        el: "#tab_buttons",
+
+        initialize: function() {
+            var self = this;
+            app.openedTabs.bind("reset", _.bind(self.render, self));
+            self.render();
+        },
+
+        render: function() {
+            var result = "";
+            app.openedTabs.each(function(tab) {
+                result += app.TabButtonTemplate({tab: tab, active: currentTab == tab});
+            });
+            this.$el.html(result);
+        }
+    });
+
+    app.tabsView = new app.TabsView();
 }
 
 function initSections() {

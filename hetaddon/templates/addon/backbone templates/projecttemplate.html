@@ -3,11 +3,11 @@
         <ul class="aui-nav pl-7">
             <a class="aui-nav-item aui-button aui-button-subtle" title="<%= project.get("name") %>" onclick="expandCollapse(this)"><span class="glyphicon glyphicon-list mr-2"></span><%= project.get("name") %></a>
             <li class="pl-10">
-                <a class="aui-nav-item aui-button aui-button-subtle pl-7" title="Documents"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Documents</a>
+                <a class="aui-nav-item aui-button aui-button-subtle pl-7" title="Documents" onclick="showTab(<%= project.get('id') %>, app.TabTypeEnum.DOCUMENTS.value)"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Documents</a>
             </li>
             <% if(project.get("requirementsExtracted")) { %>
             <li class="pl-10">
-                <a class="aui-nav-item aui-button aui-button-subtle pl-7" title="Requirements"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Requirements</a>
+                <a class="aui-nav-item aui-button aui-button-subtle pl-7" title="Requirements" onclick="showTab(<%= project.get('id') %>, app.TabTypeEnum.REQUIREMENTS.value)"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Requirements</a>
             </li>
             <% } %>
         </ul>

@@ -3,7 +3,7 @@
         <label for="<%= requirement.get("name") %>_values"><%= requirement.get("name") %></label>
         <div name="<%= name %>_values">
             <% requirement.get("values").each(function(value) { %>
-                <textarea class="text long-field" type="text" id="<%= requirement.get("name") %>" name="<%= requirement.get("name") %>" title="<%= requirement.get("name") %>"><%= value.get("data") %></textarea>
+                <textarea class="text long-field" type="text" id="<%= requirement.get("name") %>" name="<%= requirement.get("name") %>" title="<%= requirement.get("name") %>"><%= value.get("value") %></textarea>
                 <br/>
             <% }); %>
         </div>

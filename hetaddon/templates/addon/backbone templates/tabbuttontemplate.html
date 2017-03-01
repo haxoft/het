@@ -1,0 +1,5 @@
+<script type="text/template" id="tab_button_template">
+    <li class="menu-item <% if(active) { %><%= 'active-tab' %><% } %>">
+        <a href="#tab_<%= tab.get('type').value.toLowerCase() %>" onclick="showTab(<%= tab.get('project_id') %>, '<%= tab.get('type').value %>')"><%= tab.get('project_name') %> - <%= tab.get('type').toString() %></a>
+    </li>
+</script>
