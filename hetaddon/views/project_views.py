@@ -62,7 +62,7 @@ def post_project(request):
 
     folder = get_object_or_404(Folder, pk=data["parent_folder_id"])
     user_folders = utils.get_user_folders(user)
-    if folder not in user_folders:
+    if folder.id not in [f.id for f in user_folders]:
         return HttpResponse('Unauthorized action! Folder ' + str(data["parent_folder_id"]) + ' does not belong to you!',
                             status=401)
 
