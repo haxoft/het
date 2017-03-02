@@ -42,17 +42,20 @@ def folder_handler(request, id=None):
     if request.method == 'GET':
         if id:
             return HttpResponseBadRequest("Unexpected ID parameter")
-        # return get_folders_json(request)
         return get_folderstructure_json(request)
     elif request.method == 'POST':
         if id:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest("Unexpected ID parameter")
         return post_folder(request)
     elif request.method == 'PUT':
-        return put_folder(request, id)
+        if id:
+            return put_folder(request, id)
+        return HttpResponseBadRequest("Unsupported operation: PUT folders without a specified ID")
     elif request.method == 'DELETE':
-        return delete_folder(request, id)
-    return HttpResponseBadRequest()
+        if id:
+            return delete_folder(request, id)
+        return HttpResponseBadRequest("Unsupported operation: DELETE folders without a specified ID")
+    return HttpResponseBadRequest("Unsupported method!")
 
 
 def project_handler(request, id=None):
@@ -65,10 +68,14 @@ def project_handler(request, id=None):
             return HttpResponseBadRequest("Unexpected ID parameter")
         return post_project(request)
     elif request.method == 'PUT':
-        return put_project(request, id)
+        if id:
+            return put_project(request, id)
+        return HttpResponseBadRequest("Unsupported operation: PUT projects without a specified ID")
     elif request.method == 'DELETE':
-        return delete_project(request, id)
-    return HttpResponseBadRequest()
+        if id:
+            return delete_project(request, id)
+        return HttpResponseBadRequest("Unsupported operation: DELETE projects without a specified ID")
+    return HttpResponseBadRequest("Unsupported method!")
 
 
 def document_handler(request, id=None):
@@ -78,13 +85,17 @@ def document_handler(request, id=None):
         return HttpResponseBadRequest("Unsupported operation: GET documents without a specified ID")
     elif request.method == 'POST':
         if id:
-            return HttpResponseBadRequest("Found ID parameter on POST request!")
+            return HttpResponseBadRequest("Unexpected ID parameter")
         return post_document(request)
     elif request.method == 'PUT':
-        return put_document(request, id)
+        if id:
+            return put_document(request, id)
+        return HttpResponseBadRequest("Unsupported operation: PUT documents without a specified ID")
     elif request.method == 'DELETE':
-        return delete_document(request, id)
-    return HttpResponseBadRequest()
+        if id:
+            return delete_document(request, id)
+        return HttpResponseBadRequest("Unsupported operation: DELETE documents without a specified ID")
+    return HttpResponseBadRequest("Unsupported method!")
 
 
 def requirement_handler(request, id=None):
@@ -94,12 +105,16 @@ def requirement_handler(request, id=None):
         return HttpResponseBadRequest("Found undefined required ID parameter")
     elif request.method == 'POST':
         if id:
-            return HttpResponseBadRequest("Wrong request! Forbidden ID parameter")
+            return HttpResponseBadRequest("Unexpected ID parameter")
         return post_requirement(request)
     elif request.method == 'PUT':
-        return put_requirement(request, id)
+        if id:
+            return put_requirement(request, id)
+        return HttpResponseBadRequest("Unsupported operation: PUT requirements without a specified ID")
     elif request.method == 'DELETE':
-        return delete_requirement(request, id)
+        if id:
+            return delete_requirement(request, id)
+        return HttpResponseBadRequest("Unsupported operation: DELETE requirements without a specified ID")
     return HttpResponseBadRequest("Unsupported method!")
 
 
@@ -110,9 +125,31 @@ def requirement_value_handler(request, id=None):
         return HttpResponseBadRequest("Found undefined required ID parameter")
     if request.method == 'POST':
         if id:
-            return HttpResponseBadRequest("Wrong request! Forbidden ID parameter")
+            return HttpResponseBadRequest("Unexpected ID parameter")
         return post_requirement_value(request)
     if request.method == 'PUT':
-        return put_requirement_value(request, id)
+        if id:
+            return put_requirement_value(request, id)
+        return HttpResponseBadRequest("Unsupported operation: PUT values without a specified ID")
     else:
         return HttpResponseBadRequest("Unsupported method!")
+
+
+def section_handler(request, id=None):
+    if request.method == 'GET':
+        if id:
+            return get_section_json(request, id)
+        return HttpResponseBadRequest("Unsupported operation: GET sections without a specified ID")
+    elif request.method == 'POST':
+        if id:
+            return HttpResponseBadRequest("Unexpected ID parameter")
+        return post_section(request)
+    elif request.method == 'PUT':
+        if id:
+            return put_section(request, id)
+        return HttpResponseBadRequest("Unsupported operation: PUT sections without a specified ID")
+    elif request.method == 'DELETE':
+        if id:
+            return delete_section(request, id)
+        return HttpResponseBadRequest("Unsupported operation: DELETE sections without a specified ID")
+    return HttpResponseBadRequest("Unsupported method!")
