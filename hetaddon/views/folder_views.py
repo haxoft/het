@@ -7,66 +7,27 @@ import json
 log = logging.getLogger('django')
 
 
-def get_folderstructure_json(request, id=None):
-
+def get_folderstructure_json(request):
     user = utils.get_user_from_session(request)
     if user is None:
         return HttpResponse('Unauthorized', status=401)
+    root_folders = list(RootFolder.objects.filter(owner_id=user.id))
 
-    result = []
-    # this branch is never called?
-    if id:
-        project = list(Project.objects.filter(pk=id))
-        projects_path = (list(Folder.objects.filter(pk=project[0].folder_id)))
-        while projects_path[-1].parent_folder_id is not None:
-            projects_path.extend(list(Folder.objects.filter(pk=projects_path[-1].parent_folder_id)))
-        folder = projects_path.pop()
-        result = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
-        folders_array = result.get("folders")
-        while projects_path:
-            folder = projects_path.pop()
-            temp = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
-            folders_array.append(temp)
-            folders_array = temp.get("folders")
-            project_list = temp.get("projects")
-        add_projects_to_folder_structure(project_list, project)
-    else:
-
-        root_folders = list(RootFolder.objects.filter(owner_id=user.id))
-        # print("found root folders:" + str(root_folders))
-
-        root_folders.sort(key=lambda f: f.pk)
-        for folder in root_folders:
-            folder_dict = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
-            project_set = folder.projects.all()
-            folder_set = folder.folder_set.all()
-            if project_set:
-                add_projects_to_folder_structure(folder_dict.get("projects"), project_set)
-            if folder_set:
-                add_folders_to_folder_structure(folder_dict.get("folders"), folder_set)
-            result.append(folder_dict)
+    result = get_folders_for_folderstructure(root_folders, user)
 
     return JsonResponse(result, safe=False)
 
 
-def add_projects_to_folder_structure(list, project_set):
-    for project in project_set:
-        project_dict = {"id": project.pk, "name": project.name, "requirementsExtracted": False}
-        if project.requirement_set.all():
-            project_dict["requirementsExtracted"] = True
-        list.append(project_dict)
+def get_folders_for_folderstructure(folders, user):
+    folderstructure = [{"id": folder.pk, "name": folder.name,
+                        "folders": get_folders_for_folderstructure(folder.folder_set.all(), user),
+                        "projects": get_projects_for_folderstructure(folder.projects.filter(membership__user_id=user.id))}
+                       for folder in folders]
+    return folderstructure
 
 
-def add_folders_to_folder_structure(list, folder_set):
-    for folder in folder_set:
-        folder_dict = {"id": folder.pk, "name": folder.name, "folders": [], "projects": []}
-        project_set = folder.projects.all()
-        subfolder_set = folder.folder_set.all()
-        if project_set:
-            add_projects_to_folder_structure(folder_dict.get("projects"), project_set)
-        if subfolder_set:
-            add_folders_to_folder_structure(folder_dict.get("folders"), subfolder_set)
-        list.append(folder_dict)
+def get_projects_for_folderstructure(projects):
+    return [{"id": project.pk, "name": project.name, "requirementsExtracted": False} for project in projects]
 
 
 def post_folder(request):
