@@ -58,8 +58,12 @@ class FolderViews(TestCase):
         folder_2a = Folder.objects.create(name="folder_2a", parent_folder=root_folder_2)
         proj_1a = Project.objects.create(name="project_1a", created=timezone.now())
         proj_1b = Project.objects.create(name="project_1b", created=timezone.now())
+        proj_2a = Project.objects.create(name="project_2a", created=timezone.now())
         ProjectFolder.objects.create(project=proj_1a, folder=folder_1a)
         ProjectFolder.objects.create(project=proj_1b, folder=folder_1b)
+        ProjectFolder.objects.create(project=proj_2a, folder=folder_2a)
+        Membership.objects.create(user=user, project=proj_1a)
+        Membership.objects.create(user=user, project=proj_1b)
 
         folders_list = list(Folder.objects.all())
         self.assertTrue(len(folders_list) == 5)
