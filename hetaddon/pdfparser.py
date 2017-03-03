@@ -12,12 +12,13 @@ from typing import List
 
 class PdfParser:
     def __init__(self, document):
-        file = tempfile.SpooledTemporaryFile(max_size=document.size, mode="rb")
-        file.write(document.content)
-        parser = PDFParser(file)
+        self.file = tempfile.SpooledTemporaryFile(max_size=document.size, mode="rb")
+        self.file.write(document.content)
+        parser = PDFParser(self.file)
         self.document = PDFDocument(parser)
         if not self.document.is_extractable:
             raise PDFTextExtractionNotAllowed
+
 
     def get_pages(self) -> List[LTPage]:
         # Create a PDF resource manager object that stores shared resources.
@@ -38,3 +39,6 @@ class PdfParser:
         outlines = self.document.get_outlines()
         for (level,title,dest,a,se) in outlines:
             print(level, title, dest)
+
+    def close_file(self):
+        self.file.close()
