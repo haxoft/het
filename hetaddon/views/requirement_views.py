@@ -97,6 +97,7 @@ def get_requirements_of_project_json(request, id):
     for i in range(0, len(requirements_list)):
         req = requirements_list[i]
         values_list = list(RequirementValue.objects.filter(requirement_id=req.id))
+        values_list.sort(key=lambda val: val.pk)
         values_json_list = []
         for j in range(0, len(values_list)):
             values_json_list.append({"id": values_list[j].id, "value": values_list[j].value,
