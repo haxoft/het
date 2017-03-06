@@ -20,11 +20,12 @@ function expandCollapse(element) {
     self.siblings().toggle();
 }
 
-function addDocument() {
-    $('#add_document_file').trigger("click");
+function addDocument(section_id) {
+    console.log('#add_document_file_' + section_id);
+    $('#add_document_file_' + section_id).trigger("click");
 }
 
-function uploadDocument(element) {
+function uploadDocument(element, section_id) {
     var file = element.files[0];
     if (file) {
         var reader = new FileReader();
@@ -39,7 +40,7 @@ function uploadDocument(element) {
                 type:type,
                 content:btoa(content),
                 category:"oth",
-                section_id:1
+                section_id:section_id
             };
             $.ajax({
                 url: apiUrlPrefix + "documents",
@@ -47,7 +48,7 @@ function uploadDocument(element) {
                 data: JSON.stringify(data),
                 success: function() {
                     showSuccessMessage("The Document was uploaded successfully");
-                    refreshDocuments();
+                    refreshSections();
                 },
                 error: function() {
                     showErrorMessage("The document could not be uploaded, please try again or contact our webmaster.");
@@ -67,7 +68,7 @@ function deleteDocument(documentId) {
             method: "DELETE",
             success: function() {
                 showSuccessMessage("Document deleted");
-                refreshDocuments();
+                refreshSections();
             },
             error: function() {
                 showErrorMessage("Could not delete document");
@@ -79,7 +80,7 @@ function deleteDocument(documentId) {
 function addSection() {
     var data = {
         name:"New Section",
-        project_id:1
+        project_id:currentTab.get("project_id")
     };
     $.ajax({
         url: apiUrlPrefix + "sections",
@@ -87,10 +88,64 @@ function addSection() {
         data: JSON.stringify(data),
         success: function() {
             showSuccessMessage("The Section was created successfully");
-            refreshDocuments();
+            refreshSections();
         },
         error: function() {
             showErrorMessage("The section could not be created, please try again or contact our webmaster.");
+        }
+    });
+}
+
+function updateSection(id) {
+    var data = {
+        name:document.getElementById("section_" + id + "_name").value
+    };
+    $.ajax({
+        url: apiUrlPrefix + "sections/" + id,
+        method: "PUT",
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccessMessage("The Section was updated successfully");
+            refreshSections();
+        },
+        error: function() {
+            showErrorMessage("The section could not be updated, please try again or contact our webmaster.");
+        }
+    });
+}
+
+function rejectValue(id) {
+    var data = {
+        rejected:true
+    };
+    $.ajax({
+        url: apiUrlPrefix + "values/" + id,
+        method: "PUT",
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccessMessage("The Requirement Value was rejected successfully");
+            refreshRequirements();
+        },
+        error: function() {
+            showErrorMessage("The requirement value could not be rejected, please try again or contact our webmaster.");
+        }
+    });
+}
+
+function disableValue(id) {
+    var data = {
+        disabled:true
+    };
+    $.ajax({
+        url: apiUrlPrefix + "values/" + id,
+        method: "PUT",
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccessMessage("The Requirement Value was disabled successfully");
+            refreshRequirements();
+        },
+        error: function() {
+            showErrorMessage("The requirement value could not be disabled, please try again or contact our webmaster.");
         }
     });
 }
@@ -168,6 +223,10 @@ function showTab(project_id, type) {
         default:
             throw "Not implemented enum value";
     }
+}
+
+function closeTab(project_id, type) {
+
 }
 
 (function() {
@@ -302,7 +361,7 @@ function initModels() {
         defaults: {
             id: 0,
             name: "",
-            requirementsExtracted: false
+            requirements_extracted: false
         },
         url: apiUrlPrefix + "projects"
     });
@@ -600,7 +659,7 @@ function initExportDialog() {
 
     $("#export_dialog_submit_button").click(function() {
         $.ajax({
-            url: apiUrlPrefix + "projects/1/export",
+            url: apiUrlPrefix + "projects/" + currentTab.get("project_id") + "/export",
             method: "GET",
             success: function() {
                 showSuccessMessage("Here's your project export");

@@ -5,7 +5,7 @@
                 <label for="section_<%= section.get('id') %>_name" class="pt-0"><h3>Section</h3></label>
                 <input class="text" type="text" id="section_<%= section.get('id') %>_name"
                     name="section_<%= section.get('id') %>_name" title="Section Name"
-                    value="<%= section.get('name') %>">
+                    value="<%= section.get('name') %>" onchange="updateSection(<%= section.get('id') %>)">
             </div>
         </form>
         <table id="section_<%= section.get('id') %>_documents_table" class="aui">
@@ -28,5 +28,6 @@
             <span class="aui-icon aui-icon-small aui-iconfont-doc"></span>
             Add Document
         </button>
+        <input id="add_document_file_<%= section.get('id') %>" type="file" name="add_document_file" class="hidden" onchange="uploadDocument(this, <%= section.get('id') %>)" />
     </div>
 </script>

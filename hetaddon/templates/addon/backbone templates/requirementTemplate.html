@@ -1,11 +1,16 @@
 <script type="text/template" id="requirement_template">
     <div class="field-group">
-        <label for="<%= requirement.get("name") %>_values"><%= requirement.get("name") %></label>
-        <div name="<%= name %>_values">
-            <% requirement.get("values").each(function(value) { %>
-                <textarea class="text long-field" type="text" id="<%= requirement.get("name") %>" name="<%= requirement.get("name") %>" title="<%= requirement.get("name") %>"><%= value.get("value") %></textarea>
-                <br/>
-            <% }); %>
+        <label for="<%= requirement.get('name') %>_values"><%= requirement.get("name") %></label>
+            <div name="<%= name %>_values">
+                <% requirement.get('values').each(function(value) { %>
+                <div class="row">
+                    <div class="col-md-12">
+                        <textarea class="text long-field" id="<%= requirement.get('name') %>" name="<%= requirement.get('name') %>" title="<%= requirement.get('name') %>" <% if (value.get('disabled')) { %><%= "disabled" %><% } %>><%= value.get('value') %></textarea>
+                        <span class="btn btn-default btn-sm va-top" onclick="rejectValue(<%= value.get('id') %>)"><span class="glyphicon glyphicon-repeat"></span></span>
+                        <span class="btn btn-default btn-sm va-top" onclick="disableValue(<%= value.get('id') %>)"><span class="glyphicon glyphicon-remove"></span></span>
+                    </div>
+                </div>
+                <% }); %>
         </div>
     </div>
 </script>

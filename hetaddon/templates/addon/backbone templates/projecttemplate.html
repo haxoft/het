@@ -5,7 +5,8 @@
             <li class="pl-10">
                 <a class="aui-nav-item aui-button aui-button-subtle pl-7" title="Documents" onclick="showTab(<%= project.get('id') %>, app.TabTypeEnum.DOCUMENTS.value)"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Documents</a>
             </li>
-            <% if(project.get("requirementsExtracted")) { %>
+            <% console.log(project);
+            if(project.get("requirements_extracted")) { %>
             <li class="pl-10">
                 <a class="aui-nav-item aui-button aui-button-subtle pl-7" title="Requirements" onclick="showTab(<%= project.get('id') %>, app.TabTypeEnum.REQUIREMENTS.value)"><span class="aui-icon aui-icon-small aui-iconfont-page-default mr-2"></span>Requirements</a>
             </li>
