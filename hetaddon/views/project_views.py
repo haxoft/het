@@ -2,6 +2,7 @@ from django.http import *
 from django.shortcuts import get_object_or_404
 from hetaddon.models.data import *
 from . import utils
+from hetaddon.search import *
 import json
 
 
@@ -114,6 +115,30 @@ def delete_project(request, id):
     return HttpResponse("Deleted project " + str(id), status=200)
 
 
+def analyze_project(request, id):
+    user = utils.get_user_from_session(request)
+    if user is None:
+        return HttpResponse('Unauthorized', status=401)
+
+    project = get_object_or_404(Project, pk=id)
+    get_object_or_404(project.members.all(), id=user.id)
+    documents = Document.objects.filter(section__project_id=project.id)
+
+    extractor = RequirementExtractor(documents)
+    extractor.do_extraction()
+    extractor_documents = extractor.documents
+
+    for extractor_document in extractor_documents:
+        for requirement in extractor_document.requirements:
+            name = requirement.name
+            values_shown = requirement.values_shown
+            ranked_results = requirement.ranked_results
+            requirement = Requirement.objects.create(name=name, project=project, values_shown=values_shown)
+            for ranked_result in ranked_results:
+                RequirementValue.objects.create(value=ranked_result.value, rating=ranked_result.rating,
+                                                document=extractor_document.document, requirement=requirement)
+
+
 def user_owns_folder(user, folder):
 
     user_folders = utils.get_user_folders(user)
@@ -122,4 +147,3 @@ def user_owns_folder(user, folder):
             return True
 
     return False
-

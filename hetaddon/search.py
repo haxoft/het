@@ -53,15 +53,14 @@ class BulletpointList:
 
 
 class RankedResult:
-    def __init__(self, value: str, score: float, distance: float):
+    def __init__(self, value: str, rating: float):
         self.value = value
-        self.score = score
-        self.distance = distance
+        self.rating = rating
         self.rejected = False
 
 
 class RequirementResults:
-    def __init__(self, name: str, ranked_results: List[RankedResult]):
+    def __init__(self, name: str, ranked_results: List[RankedResult], values_shown: int):
         self.name = name
         self.ranked_results = ranked_results
 
@@ -248,19 +247,19 @@ class ExtractorDocument:
         potential_publication_dates = self.get_result_matches(publication_results, self.date_matches, 250)
         potential_starting_dates = self.get_result_matches(starting_date_results, self.date_matches, 250)
 
-        potential_deadlines.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_evaluation_dates.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_signature_dates.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_applicant_information_dates.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_publication_dates.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_starting_dates.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
+        potential_deadlines.sort(key=lambda r: r.rating, reverse=True)
+        potential_evaluation_dates.sort(key=lambda r: r.rating, reverse=True)
+        potential_signature_dates.sort(key=lambda r: r.rating, reverse=True)
+        potential_applicant_information_dates.sort(key=lambda r: r.rating, reverse=True)
+        potential_publication_dates.sort(key=lambda r: r.rating, reverse=True)
+        potential_starting_dates.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Deadline", potential_deadlines))
-        self.requirements.append(RequirementResults("Evaluation", potential_evaluation_dates))
-        self.requirements.append(RequirementResults("Signature", potential_signature_dates))
-        self.requirements.append(RequirementResults("Applicant Information", potential_applicant_information_dates))
-        self.requirements.append(RequirementResults("Publication", potential_publication_dates))
-        self.requirements.append(RequirementResults("Starting Date", potential_starting_dates))
+        self.requirements.append(RequirementResults("Deadline", potential_deadlines, 1))
+        self.requirements.append(RequirementResults("Evaluation", potential_evaluation_dates, 1))
+        self.requirements.append(RequirementResults("Signature", potential_signature_dates, 1))
+        self.requirements.append(RequirementResults("Applicant Information", potential_applicant_information_dates, 1))
+        self.requirements.append(RequirementResults("Publication", potential_publication_dates, 1))
+        self.requirements.append(RequirementResults("Starting Date", potential_starting_dates, 1))
 
         return
 
@@ -279,11 +278,11 @@ class ExtractorDocument:
         potential_total_budgets = self.get_result_matches(total_budget_results, self.money_matches, 250)
         potential_grant_amounts = self.get_result_matches(grant_amount_results, self.money_matches, 250)
 
-        potential_total_budgets.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_grant_amounts.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
+        potential_total_budgets.sort(key=lambda r: r.rating, reverse=True)
+        potential_grant_amounts.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Total Budget", potential_total_budgets))
-        self.requirements.append(RequirementResults("Grant Amount", potential_grant_amounts))
+        self.requirements.append(RequirementResults("Total Budget", potential_total_budgets, 1))
+        self.requirements.append(RequirementResults("Grant Amount", potential_grant_amounts, 2))
 
         return
 
@@ -296,9 +295,9 @@ class ExtractorDocument:
 
         potential_durations = self.get_result_matches(duration_results, self.duration_matches, 250)
 
-        potential_durations.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
+        potential_durations.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Duration", potential_durations))
+        self.requirements.append(RequirementResults("Duration", potential_durations, 1))
 
         return
 
@@ -315,9 +314,9 @@ class ExtractorDocument:
         potential_funded_proposal_amounts = self.get_result_matches(funded_proposal_amount_results,
                                                                     self.funded_proposal_amount_matches, 250)
 
-        potential_funded_proposal_amounts.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
+        potential_funded_proposal_amounts.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Amount of Funded Proposals", potential_funded_proposal_amounts))
+        self.requirements.append(RequirementResults("Amount of Funded Proposals", potential_funded_proposal_amounts, 1))
 
         return
 
@@ -343,15 +342,15 @@ class ExtractorDocument:
         potential_general_contact_emails = self.get_result_matches(general_contact_results, self.email_address_matches, 250)
         potential_general_contact_phone_numbers = self.get_result_matches(general_contact_results, self.phone_number_matches, 250)
 
-        potential_technical_contact_emails.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_technical_contact_phone_numbers.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_general_contact_emails.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
-        potential_general_contact_phone_numbers.sort(key=lambda r: get_result_match_weighting(r), reverse=True)
+        potential_technical_contact_emails.sort(key=lambda r: r.rating, reverse=True)
+        potential_technical_contact_phone_numbers.sort(key=lambda r: r.rating, reverse=True)
+        potential_general_contact_emails.sort(key=lambda r: r.rating, reverse=True)
+        potential_general_contact_phone_numbers.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Technical Contact Email", potential_technical_contact_emails))
-        self.requirements.append(RequirementResults("Technical Contact Phone Number", potential_technical_contact_phone_numbers))
-        self.requirements.append(RequirementResults("General Contact Email", potential_general_contact_emails))
-        self.requirements.append(RequirementResults("General Contact Phone Number", potential_general_contact_phone_numbers))
+        self.requirements.append(RequirementResults("Technical Contact Email", potential_technical_contact_emails, 1))
+        self.requirements.append(RequirementResults("Technical Contact Phone Number", potential_technical_contact_phone_numbers, 1))
+        self.requirements.append(RequirementResults("General Contact Email", potential_general_contact_emails, 1))
+        self.requirements.append(RequirementResults("General Contact Phone Number", potential_general_contact_phone_numbers, 1))
 
         return
 
@@ -379,9 +378,9 @@ class ExtractorDocument:
 
         potential_types_of_actions = self.get_result_bulletpoints(types_of_actions_results, 500)
 
-        potential_types_of_actions.sort(key=lambda r: get_result_bulletpoints_weighting(r), reverse=True)
+        potential_types_of_actions.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Types of Actions", potential_types_of_actions))
+        self.requirements.append(RequirementResults("Types of Actions", potential_types_of_actions, 1))
 
     def extract_admissibility_requirements(self):
         admissibility_requirements_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
@@ -393,9 +392,9 @@ class ExtractorDocument:
 
         potential_admissibility_requirements = self.get_result_sections(admissibility_requirements_results)
 
-        potential_admissibility_requirements.sort(key=lambda r: get_result_section_weighting(r), reverse=True)
+        potential_admissibility_requirements.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Admissibility Requirements", potential_admissibility_requirements))
+        self.requirements.append(RequirementResults("Admissibility Requirements", potential_admissibility_requirements, 1))
 
     def extract_eligibility_requirements(self):
         eligibility_requirements_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
@@ -408,9 +407,9 @@ class ExtractorDocument:
 
         potential_eligibility_requirements = self.get_result_sections(eligibility_requirements_results)
 
-        potential_eligibility_requirements.sort(key=lambda r: get_result_section_weighting(r), reverse=True)
+        potential_eligibility_requirements.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Eligibility Requirements", potential_eligibility_requirements))
+        self.requirements.append(RequirementResults("Eligibility Requirements", potential_eligibility_requirements, 1))
 
     def get_result_matches(self, search_results, match_positions, maximum_distance: float) -> List[RankedResult]:
         if not match_positions:
@@ -422,7 +421,7 @@ class ExtractorDocument:
                 if result_match_difference <= maximum_distance:
                     match_string = self.plain_content[match[0]:match[1]].replace("\r", " ").replace("\n", " ")
                     match_string = re.sub("[\s\r\n]+", " ", match_string)
-                    result_matches.append(RankedResult(match_string, result["_score"], result_match_difference))
+                    result_matches.append(RankedResult(match_string, get_result_match_weighting(result["_score"], result_match_difference)))
         return result_matches
 
     def get_result_sections(self, search_results):
@@ -462,7 +461,7 @@ class ExtractorDocument:
                 distance = 20.0 / value_word_count
             else:
                 distance = 1.0
-            result_sections.append(RankedResult(value, result["_score"], distance))
+            result_sections.append(RankedResult(value, get_result_section_weighting(result["_score"], distance)))
         return result_sections
 
     def get_result_bulletpoints(self, search_results, maximum_distance):
@@ -487,7 +486,6 @@ class RequirementExtractor:
         self.finished = False
         for document in self.documents:
             document.do_extraction()
-            # add to database
         self.finished = True
 
 
@@ -742,16 +740,16 @@ def get_distance(result1, result2, match):
     return v_offset + h_offset + 100
 
 
-def get_result_match_weighting(ranked_result: RankedResult):
-    return ranked_result.score * ranked_result.score / ranked_result.distance
+def get_result_match_weighting(score: float, distance: float):
+    return score * score / distance
 
 
-def get_result_section_weighting(ranked_result: RankedResult):
-    return ranked_result.score / ranked_result.distance
+def get_result_section_weighting(score: float, distance: float):
+    return score / distance
 
 
-def get_result_bulletpoints_weighting(ranked_result: RankedResult):
-    return ranked_result.score * ranked_result.score / ranked_result.distance
+def get_result_bulletpoints_weighting(score: float, distance: float):
+    return score * score / distance
 
 
 class SearchError(Exception):

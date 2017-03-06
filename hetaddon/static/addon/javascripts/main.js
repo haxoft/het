@@ -149,6 +149,28 @@ function disableValue(id) {
     });
 }
 
+function runAnalysis() {
+    $.ajax({
+        url: apiUrlPrefix + "projects/" + currentTab.get("project_id") + "/analyze",
+        method: "POST",
+        success: function() {
+            showSuccessMessage("The analysis was successful.");
+            refreshRequirements();
+        },
+        error: function() {
+            showErrorMessage("The analysis could not be carried out, please try again or contact our webmaster.");
+        }
+    });
+}
+
+function importProject() {
+
+}
+
+function exportProject() {
+    
+}
+
 function getCookie(name) {
     var cookieValue = null;
     if (document.cookie && document.cookie != '') {
