@@ -79,12 +79,12 @@ class ProjectViews(TestCase):
         response = self.client.get('/hxt/api/projects/' + str(project_a.id))
         self.assertEqual(response.status_code, 200)
         project_a_dict = response.json()
-        self.assertEqual(project_a_dict, {'name': project_a.name, 'folder_id': subfolder_a.id})
+        self.assertEqual(project_a_dict, {'name': project_a.name, 'folder_id': subfolder_a.id, 'requirements_extracted': False})
 
         response = self.client.get('/hxt/api/projects/' + str(project_b.id))
         self.assertEqual(response.status_code, 200)
         project_b_dict = response.json()
-        self.assertEqual(project_b_dict, {'name': project_b.name, 'folder_id': subfolder_b.id})
+        self.assertEqual(project_b_dict, {'name': project_b.name, 'folder_id': subfolder_b.id, 'requirements_extracted': False})
 
         """ Test that an unauthorized request is rejected - foreign project """
 

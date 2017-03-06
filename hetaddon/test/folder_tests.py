@@ -68,7 +68,7 @@ class FolderViews(TestCase):
         folders_list = list(Folder.objects.all())
         self.assertTrue(len(folders_list) == 5)
         projects_list = list(Project.objects.all())
-        self.assertTrue(len(projects_list) == 2)
+        self.assertTrue(len(projects_list) == 3)
 
         resp = self.client.get('/hxt/api/folders')
         self.assertEquals(resp.status_code, 200)
@@ -79,9 +79,9 @@ class FolderViews(TestCase):
                 {"id": root_folder_1.id, "name": root_folder_1.name,
                     "folders": [
                         {"id": folder_1b.id, "name": folder_1b.name, "folders": [], "projects":
-                            [{"id": proj_1b.id, "name": proj_1b.name, "requirementsExtracted": False}]},
+                            [{"id": proj_1b.id, "name": proj_1b.name, "requirements_extracted": False}]},
                         {"id": folder_1a.id, "name": folder_1a.name, "folders": [], "projects":
-                            [{"id": proj_1a.id, "name": proj_1a.name, "requirementsExtracted": False}]}],
+                            [{"id": proj_1a.id, "name": proj_1a.name, "requirements_extracted": False}]}],
                     "projects": []},
                 {"id": root_folder_2.id, "name": root_folder_2.name,
                     "folders": [
