@@ -27,7 +27,7 @@ def get_folders_for_folderstructure(folders, user):
 
 
 def get_projects_for_folderstructure(projects):
-    return [{"id": project.pk, "name": project.name, "requirementsExtracted": False} for project in projects]
+    return [{"id": project.pk, "name": project.name, "requirements_extracted": project.requirement_set.count() > 0} for project in projects]
 
 
 def post_folder(request):

@@ -28,7 +28,8 @@ def get_projects_json(request):
 
         user_projects_list.append({"name": user_projects[i].name,
                                    "created": user_projects[i].created,
-                                   "folder_id": folder.id})
+                                   "folder_id": folder.id,
+                                   "requirements_extracted": user_projects[i].requirement_set.count()})
 
     return JsonResponse(user_projects_list, safe=False)
 
@@ -43,7 +44,9 @@ def get_project_json(request, id):
     get_object_or_404(project.members.all(), id=user.id)
 
     proj_folder = utils.get_folder_of_project(project, user)
-    project_dict = {"name": project.name, "folder_id": proj_folder.id}
+    project_dict = {"name": project.name,
+                    "folder_id": proj_folder.id,
+                    "requirements_extracted": project.requirement_set.count() > 0}
     return JsonResponse(project_dict)
 
 
