@@ -10,6 +10,48 @@ from typing import List
 es = Elasticsearch()
 
 
+class Bulletpoint:
+    def __init__(self, element, sub_elements, type):
+        self.element = element
+        self.value = element["_source"]["text"]
+        self.sub_elements = sub_elements
+        self.type = type
+
+
+class BulletpointList:
+    alpha = "alpha"
+    roman_numeral = "roman"
+    numeral = "numeral"
+
+    roman_numerals = ["i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv","xvi","xvii",
+                      "xviii","xix","xx","xxi","xxii","xxiii","xxiv","xxv","xxvi","xxvii","xxviii","xxix","xxx"]
+
+    def __init__(self, bulletpoints: List[Bulletpoint]):
+        self.bulletpoints = bulletpoints
+
+    def validate(self) -> int:
+        bulletpoint_index = 0
+        if type == BulletpointList.alpha:
+            bullet_parameter = ord('a')
+            condition = lambda b: b.value[0] != chr(bullet_parameter)
+        elif type == BulletpointList.roman_numeral:
+            bullet_parameter = 0
+            condition = lambda b: b.value.startswith(BulletpointList[bullet_parameter])
+        elif type == BulletpointList.numeral:
+            bullet_parameter = 1
+            condition = lambda b: b.value.startswith(str(bullet_parameter))
+        else:
+            bullet_parameter = 0
+            condition = lambda b: b.value.startswith(b.type)
+        while bulletpoint_index < len(self.bulletpoints):
+            bulletpoint = self.bulletpoints[bulletpoint_index]
+            if condition(bulletpoint):
+                break
+            bullet_parameter += 1
+            bulletpoint_index += 1
+        return bulletpoint_index
+
+
 class RankedResult:
     def __init__(self, value: str, score: float, distance: float):
         self.value = value
@@ -48,6 +90,7 @@ class ExtractorDocument:
 
         self.initialize_matches()
         self.initialize_sections()
+        self.initialize_bulletpoints()
 
     def initialize_matches(self):
         self.date_matches = get_date_matches(self.plain_content)
@@ -61,6 +104,38 @@ class ExtractorDocument:
         all_results = es.search(index=self.index_name, body={"size": 10000, "query": {"match_all": {}}})["hits"]["hits"]
         caption_pattern = re.compile("^([1-9][0-9]?\.)*[1-9][0-9]?\.")
         self.caption_results = [r for r in all_results if caption_pattern.match(r["_source"]["text"])]
+        self.caption_results.sort(key=lambda r: r["_source"]["y"])
+
+    def initialize_bulletpoints(self):
+        all_results = es.search(index=self.index_name, body={"size": 10000, "query": {"match_all": {}}})["hits"]["hits"]
+        all_results.sort(key=lambda r:r["_source"]["y"])
+        bullet = "(•|o|􀂃|-|o|􀂃|-||||◦|●|◘|◉|·|—|–|→|■)"
+        alpha = "(\([a-z]\)|[a-z]\.)"
+        roman_numeral = "(x{0,3}(ix|iv|v?i{0,3})(\)|\.))"
+        numeral = "([1-9][0-9]?(\)|\.))"
+        final_regex = "^\s*({bullet}|{alpha}|{roman_numeral}|{numeral})"\
+            .format(bullet=bullet, alpha=alpha, roman_numeral=roman_numeral, numeral=numeral)
+        bullet_pattern = re.compile(bullet)
+        alpha_pattern = re.compile(alpha)
+        roman_numeral_pattern = re.compile(roman_numeral)
+        numeral_pattern = re.compile(numeral)
+        bulletpoint_pattern = re.compile(final_regex)
+        bulletpoint_results = [r for r in all_results if bulletpoint_pattern.match(r["_source"]["text"])]
+        bulletpoint_lists = []
+        next_list = []
+        while len(bulletpoint_results) > 0:
+            current_result = bulletpoint_results[0]
+            if bullet_pattern.match(current_result):
+                type = current_result[0]
+            elif alpha_pattern.match(current_result):
+                type = "alpha"
+            elif roman_numeral_pattern.match(current_result):
+                type = "roman_numeral"
+            current_y = current_result["_source"]["y"]
+            potential_bulletpoint_list = [r for r in bulletpoint_results if r["_source"]["y"] == current_y]
+            following_result = bulletpoint_results[1]
+            # while
+
         self.caption_results = sorted(self.caption_results, key=lambda r: r["_source"]["y"])
 
     def do_parse_pdf(self):
@@ -68,6 +143,7 @@ class ExtractorDocument:
         pages = pdf_parser.get_pages()
         bulk_elements = []
         element_index = 0
+        element_group_index = 0
         self.plain_content = ""
         plain_content_index = 0
         base_y = 0
@@ -82,7 +158,8 @@ class ExtractorDocument:
                 if element_type is LTTextBoxHorizontal:
                     for line in element:
                         page_element = {"text": line.get_text(), "x": line.x0, "y": base_y + page_height - line.y0,
-                                        "width": line.width, "height": line.height}
+                                        "width": line.width, "height": line.height,
+                                        "parent_element": element_group_index}
                         page_elements.append(page_element)
                 elif element_type is LTFigure or element_type is LTRect or element_type is LTCurve:
                     page_element = {"text": "", "x": element.x0, "y": base_y + page_height - element.y0,
@@ -92,6 +169,7 @@ class ExtractorDocument:
                     page_element = {"text": "", "x": element.x0, "y": base_y + page_height - element.y0,
                                     "width": element.width, "height": element.height}
                     page_elements.append(page_element)
+                element_group_index += 1
             base_y += page_height
             for element in page_elements:
                 element_text = element["text"]
@@ -108,7 +186,7 @@ class ExtractorDocument:
                 bulk_elements.append(element)
                 element_index += 1
                 plain_content_index += len(element_text) + 1
-            self.plain_content += ' '.join(e['text'] for e in page_elements)
+            self.plain_content += '\n'.join(e['text'] for e in page_elements)
             self.plain_content = re.sub("-\n\s*", "-", self.plain_content)
             plain_content_index -= 1
 
@@ -315,7 +393,7 @@ class ExtractorDocument:
 
         potential_admissibility_requirements = self.get_result_sections(admissibility_requirements_results)
 
-        potential_admissibility_requirements.sort(key=lambda r: r.score, reverse=True)
+        potential_admissibility_requirements.sort(key=lambda r: get_result_section_weighting(r), reverse=True)
 
         self.requirements.append(RequirementResults("Admissibility Requirements", potential_admissibility_requirements))
 
@@ -330,7 +408,7 @@ class ExtractorDocument:
 
         potential_eligibility_requirements = self.get_result_sections(eligibility_requirements_results)
 
-        potential_eligibility_requirements.sort(key=lambda r: r.score, reverse=True)
+        potential_eligibility_requirements.sort(key=lambda r: get_result_section_weighting(r), reverse=True)
 
         self.requirements.append(RequirementResults("Eligibility Requirements", potential_eligibility_requirements))
 
@@ -379,7 +457,12 @@ class ExtractorDocument:
                     value = self.plain_content[previous_caption["_source"]["text_start_index"]:]
                 else:
                     value = self.plain_content[previous_caption["_source"]["text_start_index"]:next_caption["_source"]["text_start_index"] - 1]
-            result_sections.append(RankedResult(value, result["_score"], 1))
+            value_word_count = len(re.findall("[a-zA-Z]+", value)) + 1
+            if value_word_count < 20:
+                distance = 20.0 / value_word_count
+            else:
+                distance = 1.0
+            result_sections.append(RankedResult(value, result["_score"], distance))
         return result_sections
 
     def get_result_bulletpoints(self, search_results, maximum_distance):
@@ -395,14 +478,17 @@ class ExtractorDocument:
 
 class RequirementExtractor:
     def __init__(self, documents):
-        self.plain_content = ""
+        self.finished = False
         self.documents = []
         for document in documents:
             self.documents.append(ExtractorDocument(document))
 
     def do_extraction(self):
+        self.finished = False
         for document in self.documents:
             document.do_extraction()
+            # add to database
+        self.finished = True
 
 
 def get_date_matches(plain_content):
@@ -660,8 +746,12 @@ def get_result_match_weighting(ranked_result: RankedResult):
     return ranked_result.score * ranked_result.score / ranked_result.distance
 
 
-def get_result_bulletpoints_weighting(bulletpoint_result: BulletpointResult):
-    return bulletpoint_result.score * bulletpoint_result.score / bulletpoint_result.distance
+def get_result_section_weighting(ranked_result: RankedResult):
+    return ranked_result.score / ranked_result.distance
+
+
+def get_result_bulletpoints_weighting(ranked_result: RankedResult):
+    return ranked_result.score * ranked_result.score / ranked_result.distance
 
 
 class SearchError(Exception):
@@ -719,24 +809,42 @@ class ExtractionTest:
                           "15 September 2016", "September-December 2016", "As of February 2017", None, "12 May 2016", None,
                           "€0.5 million", None, "24 months", None, None, None, "INEA-CEF-Telecom-Calls@ec.europa.eu", None,
                           None, None, None)
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC9/2016-3_ceftelecom_calltext_cybersecurity_200916_final.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC10/2016-3_ceftelecom_calltext_einvoicing_200916_final.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC11/2016-3_ceftelecom_calltext_europeana_200916_final.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC12/2016-4_ceftelecom_call-text_safer_internet_200916_final.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC13/2016-cef-synergy_call_text_final_for_publication.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC14/2016-cef-transport_ap_general_call_text.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC15/9386_Terms of Reference_Women Part SME Instrv2 .pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC16/call_for_proposals_2015_isfb_esur_en.doc.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC17/call-text-ja-gpsd-2016_en.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC18/EIT 2016 Call for KICs proposals.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC19/EIT_2014_Call_for_KIC_proposals_0.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC20/hp-pj-2016-call-text_en.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC21/isfb_schengen_ml_call_for_proposal_en.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC22/VP 2015 009 call_mobility experience_REV_FIN.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC23/VP 2016 011_Reactivate_publication.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/ACBAR1/Attachment A - RFA - Media and Communication.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/CEPF1/RIT-Request-EOIs-Mediterranean-Basin-EN.pdf")
-        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/DFAT1/australia-indonesia-institute-grant-guidelines-2017.pdf")
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC9/2016-3_ceftelecom_calltext_cybersecurity_200916_final.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC10/2016-3_ceftelecom_calltext_einvoicing_200916_final.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC11/2016-3_ceftelecom_calltext_europeana_200916_final.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC12/2016-4_ceftelecom_call-text_safer_internet_200916_final.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC13/2016-cef-synergy_call_text_final_for_publication.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC14/2016-cef-transport_ap_general_call_text.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC15/9386_Terms of Reference_Women Part SME Instrv2 .pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC16/call_for_proposals_2015_isfb_esur_en.doc.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC17/call-text-ja-gpsd-2016_en.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC18/EIT 2016 Call for KICs proposals.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC19/EIT_2014_Call_for_KIC_proposals_0.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC20/hp-pj-2016-call-text_en.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC21/isfb_schengen_ml_call_for_proposal_en.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC22/VP 2015 009 call_mobility experience_REV_FIN.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC23/VP 2016 011_Reactivate_publication.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/ACBAR1/Attachment A - RFA - Media and Communication.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/CEPF1/RIT-Request-EOIs-Mediterranean-Basin-EN.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/DFAT1/australia-indonesia-institute-grant-guidelines-2017.pdf",
+        #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
 
     def add_document(self, path: str, deadline, evaluation, signature, applicant_information, publication, starting_date,
                      total_budget, grant_amount, duration, funded_proposals_amount, technical_contact_email,
