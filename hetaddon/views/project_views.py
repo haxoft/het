@@ -40,7 +40,6 @@ def get_project_json(request, id):
         return HttpResponse('Unauthorized', status=401)
 
     project = get_object_or_404(Project, pk=id)
-    # print("all project owners:" + str(project.members.all()))
     get_object_or_404(project.members.all(), id=user.id)
 
     proj_folder = utils.get_folder_of_project(project, user)
