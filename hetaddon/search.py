@@ -124,11 +124,12 @@ class ExtractorDocument:
         next_list = []
         while len(bulletpoint_results) > 0:
             current_result = bulletpoint_results[0]
-            if bullet_pattern.match(current_result):
-                type = current_result[0]
-            elif alpha_pattern.match(current_result):
+            current_text = current_result["_source"]["text"]
+            if bullet_pattern.match(current_text):
+                type = current_text[0]
+            elif alpha_pattern.match(current_text):
                 type = "alpha"
-            elif roman_numeral_pattern.match(current_result):
+            elif roman_numeral_pattern.match(current_text):
                 type = "roman_numeral"
             current_y = current_result["_source"]["y"]
             potential_bulletpoint_list = [r for r in bulletpoint_results if r["_source"]["y"] == current_y]
@@ -949,10 +950,10 @@ class ExtractionTestDocument:
         for score in self.requirement_scores:
             score.print_score()
 
-test = ExtractionTest()
-test.do_extraction()
-x = 5
-y = 3
-
-for document in test.documents:
-    document.print_results()
+# test = ExtractionTest()
+# test.do_extraction()
+# x = 5
+# y = 3
+#
+# for document in test.documents:
+#     document.print_results()
