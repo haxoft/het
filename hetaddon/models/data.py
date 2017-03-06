@@ -38,31 +38,31 @@ def mock_data():
     Document.objects.create(name="Template.pdf", type="pdf", size=3786, status="None",
                                                    section=eu_leds2014_section_general, category='tem')
 
-    title_req = Requirement.objects.create(name="Title", project=eu_leds2014_project)
-    RequirementValue.objects.create(value="Innovating SMEs", requirement=title_req, document=eu_leds2014_call)
+    title_req = Requirement.objects.create(name="Title", project=eu_leds2014_project, values_shown=1)
+    RequirementValue.objects.create(value="Innovating SMEs", requirement=title_req, document=eu_leds2014_call, rating=1.0)
 
-    deadline_req = Requirement.objects.create(name="Deadline", project=eu_leds2014_project)
-    RequirementValue.objects.create(value="30/07/2017", requirement=deadline_req, document=eu_leds2014_call)
+    deadline_req = Requirement.objects.create(name="Deadline", project=eu_leds2014_project, values_shown=1)
+    RequirementValue.objects.create(value="30/07/2017", requirement=deadline_req, document=eu_leds2014_call, rating=1.0)
 
-    context_req = Requirement.objects.create(name="Project context", project=eu_leds2014_project)
-    RequirementValue.objects.create(value="Horizon 2020", requirement=context_req, document=eu_leds2014_call)
-    RequirementValue.objects.create(value="European Commission", requirement=context_req, document=eu_leds2014_call)
-    RequirementValue.objects.create(value="Industrial Leadership", requirement=context_req, document=eu_leds2014_call)
+    context_req = Requirement.objects.create(name="Project context", project=eu_leds2014_project, values_shown=3)
+    RequirementValue.objects.create(value="Horizon 2020", requirement=context_req, document=eu_leds2014_call, rating=1.0)
+    RequirementValue.objects.create(value="European Commission", requirement=context_req, document=eu_leds2014_call, rating=1.0)
+    RequirementValue.objects.create(value="Industrial Leadership", requirement=context_req, document=eu_leds2014_call, rating=1.0)
 
-    lenght_req = Requirement.objects.create(name="Length", project=eu_leds2014_project)
-    RequirementValue.objects.create(value="60 pages", requirement=lenght_req, document=eu_leds2014_call)
+    lenght_req = Requirement.objects.create(name="Length", project=eu_leds2014_project, values_shown=1)
+    RequirementValue.objects.create(value="60 pages", requirement=lenght_req, document=eu_leds2014_call, rating=1.0)
 
-    particip_req = Requirement.objects.create(name="Participation Limitations", project=eu_leds2014_project)
+    particip_req = Requirement.objects.create(name="Participation Limitations", project=eu_leds2014_project, values_shown=2)
     RequirementValue.objects.create(value="The participation of female members must be at least 30%",
-                                    requirement=particip_req, document=eu_leds2014_call)
+                                    requirement=particip_req, document=eu_leds2014_call, rating=1.0)
     RequirementValue.objects.create(value="Consortium institutions must originate from 3 different EU countries",
-                                    requirement=particip_req, document=eu_leds2014_call)
+                                    requirement=particip_req, document=eu_leds2014_call, rating=1.0)
 
-    scope_req = Requirement.objects.create(name="Scope", project=eu_leds2014_project)
+    scope_req = Requirement.objects.create(name="Scope", project=eu_leds2014_project, values_shown=1)
     RequirementValue.objects.create(value="The above describes three intervowen aspects of a "
                                           "challenge to segment the (SME-)Clients of public innovation support in "
                                           "order to achieve a higher social return from the investments into ...",
-                                    requirement=scope_req, document=eu_leds2014_call)
+                                    requirement=scope_req, document=eu_leds2014_call, rating=1.0)
 
     Membership.objects.create(user=user, project=eu_leds2014_project)
     Membership.objects.create(user=user, project=eu_iot_project)

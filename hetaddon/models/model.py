@@ -89,12 +89,15 @@ class Document(models.Model):
 
 class Requirement(models.Model):
     name = models.CharField(max_length=128)
+    values_shown = models.IntegerField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
 
 class RequirementValue(models.Model):
     value = models.CharField(max_length=300)
     disabled = models.BooleanField(default=False)
+    rejected = models.BooleanField(default=False)
+    rating = models.FloatField()
     requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE)
     # don't delete the value when the doc is removed
     document = models.ForeignKey(Document, null=True, on_delete=models.SET_NULL)

@@ -32,19 +32,19 @@ def post_requirement(request):
 
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not all(k in data for k in ("name", "project_id", "values")):
-        return HttpResponseBadRequest("Missing required parameters!Expected:[name, project_id, values]")
+    if not all(k in data for k in ("name", "project_id", "values", "values_shown")):
+        return HttpResponseBadRequest("Missing required parameters!Expected:[name, project_id, values, values_shown]")
     project = get_object_or_404(Project, pk=data["project_id"])
     get_object_or_404(Membership, user=user, project=project) # check if the user is member of this project
 
     # todo check structure correctness of each dict in values
     values_list = data["values"]
-    req = Requirement.objects.create(name=data["name"], project=project)
+    req = Requirement.objects.create(name=data["name"], project=project, values_shown=data["values_shown"])
     for i in range(0, len(values_list)):
         value_dict = values_list[i]
         doc = get_object_or_404(Document, pk=value_dict["document_id"])
         RequirementValue.objects.create(value=value_dict["value"], disabled=value_dict["disabled"],
-                                        requirement=req, document=doc)
+                                        requirement=req, document=doc, rating=value_dict["rating"])
 
     return HttpResponse("Requirement was successfully created.", status=201)
 
@@ -62,6 +62,10 @@ def put_requirement(request, id):
 
     if "name" in data:
         requirement.name = data["name"]
+    if "values_shown" in data:
+        values_shown = data["values_shown"]
+        if requirement.requirementvalue_set.count() < values_shown:
+            return HttpResponseBadRequest("Invalid data")
     requirement.save()
 
     return HttpResponse("Requirement was successfully updated", status=200)
@@ -96,12 +100,13 @@ def get_requirements_of_project_json(request, id):
     requirements_json_list = []
     for i in range(0, len(requirements_list)):
         req = requirements_list[i]
-        values_list = list(RequirementValue.objects.filter(requirement_id=req.id))
-        values_list.sort(key=lambda val: val.pk)
+        unrejected_values_list = list(RequirementValue.objects.filter(requirement_id=req.id, rejected=False))
+        unrejected_values_list.sort(key=lambda val: val.rating, reverse=True)
         values_json_list = []
-        for j in range(0, len(values_list)):
-            values_json_list.append({"id": values_list[j].id, "value": values_list[j].value,
-                                     "disabled": values_list[j].disabled, "document": values_list[j].document_id })
+        values_shown = min(req.values_shown, len(unrejected_values_list))
+        for j in range(0, values_shown):
+            values_json_list.append({"id": unrejected_values_list[j].id, "value": unrejected_values_list[j].value,
+                                     "disabled": unrejected_values_list[j].disabled, "document": unrejected_values_list[j].document_id })
         requirements_json_list.append({"id": req.id, "name": req.name, "values": values_json_list})
 
     return JsonResponse(requirements_json_list, safe=False)
@@ -117,7 +122,8 @@ def get_requirement_value_json(request, id):
     get_object_or_404(Membership, user=user, project=req_value.requirement.project)
 
     req_value_dict = {"id": req_value.id, "value": req_value.name, "disabled": req_value.project.id,
-                        "requirement_id": req_value.requirement_id, "document_id": req_value.document_id}
+                      "requirement_id": req_value.requirement_id, "document_id": req_value.document_id,
+                      "rating": req_value.rating}
     return JsonResponse(req_value_dict)
 
 
@@ -129,8 +135,8 @@ def post_requirement_value(request):
 
     body_unicode = request.body.decode('utf-8')
     data = json.loads(body_unicode)
-    if not all(k in data for k in ("value", "requirement_id", "document_id")):
-        return HttpResponseBadRequest("Missing required parameters!Expected:[value, requirement_id, document_id]")
+    if not all(k in data for k in ("value", "requirement_id", "document_id", "rating")):
+        return HttpResponseBadRequest("Missing required parameters!Expected:[value, requirement_id, document_id, rating]")
 
     requirement = get_object_or_404(Requirement, pk=data["requirement_id"])
     get_object_or_404(Membership, user=user, project=requirement.project)
@@ -138,7 +144,7 @@ def post_requirement_value(request):
     document = get_object_or_404(Document, pk=data["document_id"])
     get_object_or_404(Membership, user=user, project=document.section.project)
 
-    RequirementValue.objects.create(value=data["value"], requirement=requirement, document=document)
+    RequirementValue.objects.create(value=data["value"], requirement=requirement, document=document, rating=data["rating"])
     return HttpResponse("Requirement was successfully created.", status=201)
 
 
@@ -162,6 +168,18 @@ def put_requirement_value(request, id):
         req_value.disabled = data["disabled"]
     if "requirement_id" in data:
         req_value.requirement = get_object_or_404(Requirement, pk=data["requirement_id"])
+    if "rejected" in data:
+        req_value.rejected = True
+        requirement = req_value.requirement
+        unrejected_values = requirement.requirementvalue_set.filter(rejected=False).exclude(id=req_value.id)
+        if unrejected_values.count() < requirement.values_shown:
+            rejected_values = requirement.requirementvalue_set.filter(rejected=True).order_by("-rating")
+            if rejected_values.count() == 0:
+                req_value.rejected = False
+            else:
+                best_rejected_value = rejected_values[0]
+                best_rejected_value.rejected = False
+                best_rejected_value.save()
 
     req_value.save()
     return HttpResponse("Requirement was successfully updated", status=200)

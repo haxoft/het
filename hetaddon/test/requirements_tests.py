@@ -24,18 +24,18 @@ class RequirementViews(TestCase):
         test_section = Section.objects.create(name="test_section", project=test_project)
         test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
                                            section=test_section, category='cal')
-        test_req = Requirement.objects.create(name="test_req", project=test_project)
+        test_req = Requirement.objects.create(name="test_req", project=test_project, values_shown=2)
         test_req_value_a = RequirementValue.objects.create(value='test_req_value_a', disabled=True,
-                                                           requirement=test_req, document=test_doc)
+                                                           requirement=test_req, document=test_doc, rating=1.0)
         test_req_value_b = RequirementValue.objects.create(value='test_req_value_b', disabled=True,
-                                                           requirement=test_req, document=test_doc)
+                                                           requirement=test_req, document=test_doc, rating=1.0)
 
         # foreign data
         foreign_project = Project.objects.create(name="foreign_project", created=timezone.now())
         foreign_section = Section.objects.create(name="foreign_section", project=foreign_project)
         Document.objects.create(name="foreign_doc", type="pdf", size=1353653, status="None",
                                               section=foreign_section, category='cal')
-        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project)
+        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project, values_shown=1)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 2)
@@ -82,9 +82,10 @@ class RequirementViews(TestCase):
 
         new_req_dict = {'name': 'test_req', 'project_id': test_project.id,
                         'values': [
-                            {'value': 'test_value_a', 'disabled': True, 'document_id': test_doc.id},
-                            {'value': 'test_value_b', 'disabled': False, 'document_id': test_doc.id}
-                        ]}
+                            {'value': 'test_value_a', 'disabled': True, 'document_id': test_doc.id, 'rating': 1.0},
+                            {'value': 'test_value_b', 'disabled': False, 'document_id': test_doc.id, 'rating': 1.0}
+                        ],
+                        'values_shown': 2}
 
         resp = self.client.post('/hxt/api/requirements', json.dumps(new_req_dict), content_type="application/json")
         print(resp.content.decode('utf-8'))
@@ -97,10 +98,10 @@ class RequirementViews(TestCase):
         resp = self.client.post('/hxt/api/requirements', json.dumps(wrong_req), content_type="application/json")
         self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.content.decode('utf-8'),
-                          "Missing required parameters!Expected:[name, project_id, values]")
+                          "Missing required parameters!Expected:[name, project_id, values, values_shown]")
 
         """ Test that an error is returned on unauthorized action - requirement with a foreign project id """
-        wrong_req = {'name': 'name', 'project_id': foreign_project.id, 'values': []}
+        wrong_req = {'name': 'name', 'project_id': foreign_project.id, 'values': [], 'values_shown': 1}
         resp = self.client.post('/hxt/api/requirements', json.dumps(wrong_req), content_type="application/json")
         self.assertEquals(resp.status_code, 404)
 
@@ -118,10 +119,10 @@ class RequirementViews(TestCase):
         test_section = Section.objects.create(name="test_section", project=test_project)
         test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
                                            section=test_section, category='cal')
-        test_req = Requirement.objects.create(name="test_req", project=test_project)
+        test_req = Requirement.objects.create(name="test_req", project=test_project, values_shown=1)
 
         foreign_project = Project.objects.create(name="foreign_project", created=timezone.now())
-        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project)
+        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project, values_shown=1)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 2)
@@ -157,14 +158,14 @@ class RequirementViews(TestCase):
         test_section = Section.objects.create(name="test_section", project=test_project)
         test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
                                            section=test_section, category='cal')
-        test_req = Requirement.objects.create(name="test_req", project=test_project)
+        test_req = Requirement.objects.create(name="test_req", project=test_project, values_shown=2)
         test_req_value_a = RequirementValue.objects.create(value='test_req_value_a', disabled=True,
-                                                           requirement=test_req, document=test_doc)
+                                                           requirement=test_req, document=test_doc, rating=1.0)
         test_req_value_b = RequirementValue.objects.create(value='test_req_value_b', disabled=True,
-                                                           requirement=test_req, document=test_doc)
+                                                           requirement=test_req, document=test_doc, rating=1.0)
         # foreign data
         foreign_project = Project.objects.create(name="foreign_project", created=timezone.now())
-        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project)
+        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project, values_shown=1)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 2)
@@ -200,15 +201,15 @@ class RequirementViews(TestCase):
         test_section_b = Section.objects.create(name="test_section", project=test_project_b)
         test_doc_a = Document.objects.create(name="test_doc_a1", type="pdf", size=111111, status="None",
                                              section=test_section_a, category='cal')
-        test_req_a = Requirement.objects.create(name="test_req_a", project=test_project_a)
+        test_req_a = Requirement.objects.create(name="test_req_a", project=test_project_a, values_shown=1)
         test_req_val_a = RequirementValue.objects.create(value="test_req_val_a", requirement=test_req_a,
-                                                         document=test_doc_a)
-        test_req_b = Requirement.objects.create(name="test_req_b", project=test_project_b)
+                                                         document=test_doc_a, rating=1.0)
+        test_req_b = Requirement.objects.create(name="test_req_b", project=test_project_b, values_shown=1)
         test_req_val_b = RequirementValue.objects.create(value="test_req_val_b", requirement=test_req_b,
-                                                         document=test_doc_a)
+                                                         document=test_doc_a, rating=1.0)
         # foreign data
         foreign_project = Project.objects.create(name="foreign_project", created=timezone.now())
-        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project)
+        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project, values_shown=1)
 
         req_list = list(Requirement.objects.all())
         self.assertTrue(len(req_list) == 3)
@@ -241,14 +242,14 @@ class RequirementViews(TestCase):
         test_section = Section.objects.create(name="test_section", project=test_project)
         test_doc = Document.objects.create(name="test_doc", type="pdf", size=1353653, status="None",
                                            section=test_section, category='cal')
-        test_req = Requirement.objects.create(name="test_req", project=test_project)
+        test_req = Requirement.objects.create(name="test_req", project=test_project, values_shown=2)
         test_req_value_a = RequirementValue.objects.create(value='test_req_value_a', disabled=True,
-                                                           requirement=test_req, document=test_doc)
+                                                           requirement=test_req, document=test_doc, rating=1.0)
         test_req_value_b = RequirementValue.objects.create(value='test_req_value_b', disabled=True,
-                                                           requirement=test_req, document=test_doc)
+                                                           requirement=test_req, document=test_doc, rating=1.0)
         # foreign data
         foreign_project = Project.objects.create(name="foreign_project", created=timezone.now())
-        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project)
+        foreign_req = Requirement.objects.create(name="foreign_req", project=foreign_project, values_shown=1)
 
         req_val_list = list(RequirementValue.objects.all())
         self.assertTrue(len(req_val_list) == 2)
