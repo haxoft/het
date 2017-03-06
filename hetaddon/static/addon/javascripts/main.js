@@ -21,7 +21,6 @@ function expandCollapse(element) {
 }
 
 function addDocument(section_id) {
-    console.log('#add_document_file_' + section_id);
     $('#add_document_file_' + section_id).trigger("click");
 }
 
@@ -202,7 +201,6 @@ function showTab(project_id, type) {
         app.openedTabs.add(currentTab);
     }
 
-    console.log("asdf");
     refreshSections();
     refreshRequirements();
 
