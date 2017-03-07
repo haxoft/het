@@ -123,6 +123,8 @@ def analyze_project(request, id):
     project = get_object_or_404(Project, pk=id)
     get_object_or_404(project.members.all(), id=user.id)
     documents = Document.objects.filter(section__project_id=project.id)
+    requirements = Requirement.objects.filter(project_id=project.id)
+    requirements.delete()
 
     extractor = RequirementExtractor(documents)
     extractor.do_extraction()
