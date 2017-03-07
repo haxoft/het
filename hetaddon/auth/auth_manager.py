@@ -12,11 +12,14 @@ class AuthManager(atlassian_jwt.Authenticator):
         super(AuthManager, self).__init__()
 
     def get_shared_secret(self, client_key):
-        tenant_info = TenantInfo.objects.filter(client_key=client_key)[0]
 
-        if tenant_info is not None:
-            return tenant_info.shared_secret
-        return None
+        tenants = TenantInfo.objects.filter(client_key=client_key)
+        if len(tenants) < 1:
+            log.error("Found no tenant info! Reinstall addon?")
+            return None
+
+        tenant_info = tenants[0]
+        return tenant_info.shared_secret
 
     @staticmethod
     def register_tenant(tenant_info_dict):

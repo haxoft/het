@@ -83,11 +83,14 @@ def clear_db():
     User.objects.all().delete()
     # dont add 'TenantInfo' - would require a new addon install
 
+    db_connection = None
     try:
         db_connection = psycopg2.connect("dbname='hetdb' user='postgres' host='localhost' password='postgres'")
+    except Exception as e:
+        print("I am unable to connect to the database, err:" + e)
 
+    if db_connection is not None:
         db_cursor = db_connection.cursor()
-
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_document_id_seq RESTART WITH 1""")
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_externalplatform_id_seq RESTART WITH 1""")
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_folder_id_seq RESTART WITH 1""")
@@ -98,7 +101,5 @@ def clear_db():
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_section_id_seq RESTART WITH 1""")
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_user_id_seq RESTART WITH 1""")
         db_cursor.execute("""ALTER SEQUENCE public.hetaddon_projectfolder_id_seq RESTART WITH 1""")
-        db_cursor.execute("""ALTER SEQUENCE public.hetaddon_rootfolder_id_seq RESTART WITH 1""")
-    except:
-        print("I am unable to connect to the database")
+
 
