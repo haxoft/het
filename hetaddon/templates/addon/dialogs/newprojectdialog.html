@@ -1,5 +1,3 @@
-
-
 <section role="dialog" id="new_project_dialog" class="aui-layer aui-dialog2 aui-dialog2-medium" aria-hidden="true">
     <header class="aui-dialog2-header">
         <h2 class="aui-dialog2-header-main">Create HXT Project</h2>
@@ -8,15 +6,19 @@
         </a>
     </header>
     <div class="aui-dialog2-content">
-        <div class="field-group">
-            <label for="new_project_name">Project Name</label>
-            <input class="text long-field" type="text" id="new_project_name" name="new_project_name" title="Project Name">
-        </div>
-        <div class="field-group">
-            <label for="new_project_folder">Parent Folder</label>
-            <select class="long-field" id="new_project_folder" name="new_project_folder">
-            </select>
-        </div>
+
+        <form class="aui">
+            <div class="field-group">
+                <label for="new_project_name">Project Name</label>
+                <input class="text long-field" type="text" id="new_project_name" name="new_project_name" title="Project Name">
+            </div>
+            <div class="field-group">
+                <label for="new_project_folder">Parent Folder</label>
+                <select class="long-field" id="new_project_folder" name="new_project_folder">
+                </select>
+            </div>
+        </form>
+
     </div>
     <footer class="aui-dialog2-footer">
         <div class="aui-dialog2-footer-actions">
