@@ -188,7 +188,7 @@ function removeValue(requirement_id) {
 }
 
 function runAnalysis() {
-    app.waitingDialog.show("Analysis running");
+    app.waitingDialog.show("Extraction running");
     $.ajax({
         url: apiUrlPrefix + "projects/" + currentTab.get("project_id") + "/analyze",
         method: "POST",

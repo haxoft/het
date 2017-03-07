@@ -577,8 +577,8 @@ class ExtractorDocument:
             }
         ]}}})["hits"]["hits"]
         distance = min(get_distance(result, e) for e in bulletpoint_list_results)
-        if distance == 0:
-            distance = 0.5
+        if distance < 5:
+            distance = 5
         return distance
 
     def print_requirements(self):
