@@ -10,14 +10,6 @@ from typing import List
 es = Elasticsearch()
 
 
-class Bulletpoint:
-    def __init__(self, element, sub_elements, type):
-        self.element = element
-        self.value = element["_source"]["text"]
-        self.sub_elements = sub_elements
-        self.type = type
-
-
 class BulletpointList:
     alpha = "alpha"
     roman_numeral = "roman"
@@ -26,8 +18,9 @@ class BulletpointList:
     roman_numerals = ["i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii","xiii","xiv","xv","xvi","xvii",
                       "xviii","xix","xx","xxi","xxii","xxiii","xxiv","xxv","xxvi","xxvii","xxviii","xxix","xxx"]
 
-    def __init__(self, bulletpoints: List[Bulletpoint]):
+    def __init__(self, bulletpoints, element_after):
         self.bulletpoints = bulletpoints
+        self.element_after = element_after
 
     def validate(self) -> int:
         bulletpoint_index = 0
@@ -63,6 +56,7 @@ class RequirementResults:
     def __init__(self, name: str, ranked_results: List[RankedResult], values_shown: int):
         self.name = name
         self.ranked_results = ranked_results
+        self.values_shown = values_shown
 
     def reject_current(self):
         first_unrejected = self.get_current()
@@ -107,36 +101,85 @@ class ExtractorDocument:
 
     def initialize_bulletpoints(self):
         all_results = es.search(index=self.index_name, body={"size": 10000, "query": {"match_all": {}}})["hits"]["hits"]
+        all_results.sort(key=lambda r:r["_source"]["x"])
         all_results.sort(key=lambda r:r["_source"]["y"])
-        bullet = "(•|o|􀂃|-|o|􀂃|-||||◦|●|◘|◉|·|—|–|→|■)"
+        bullet = "(•|􀂃|-|􀂃|-||||◦|●|◘|◉|·|—|–|→|■)"
         alpha = "(\([a-z]\)|[a-z]\.)"
         roman_numeral = "(x{0,3}(ix|iv|v?i{0,3})(\)|\.))"
-        numeral = "([1-9][0-9]?(\)|\.))"
-        final_regex = "^\s*({bullet}|{alpha}|{roman_numeral}|{numeral})"\
-            .format(bullet=bullet, alpha=alpha, roman_numeral=roman_numeral, numeral=numeral)
+        final_regex = "^\s*({bullet}|{alpha}|{roman_numeral})" \
+            .format(bullet=bullet, alpha=alpha, roman_numeral=roman_numeral)
+        # numeral = "([1-9][0-9]?(\)|\.)(?![0-9]))"
+        # final_regex = "^\s*({bullet}|{alpha}|{roman_numeral}|{numeral})"\
+        #     .format(bullet=bullet, alpha=alpha, roman_numeral=roman_numeral, numeral=numeral)
         bullet_pattern = re.compile(bullet)
         alpha_pattern = re.compile(alpha)
         roman_numeral_pattern = re.compile(roman_numeral)
-        numeral_pattern = re.compile(numeral)
+        # numeral_pattern = re.compile(numeral)
         bulletpoint_pattern = re.compile(final_regex)
         bulletpoint_results = [r for r in all_results if bulletpoint_pattern.match(r["_source"]["text"])]
         bulletpoint_lists = []
         next_list = []
         while len(bulletpoint_results) > 0:
+            if len(bulletpoint_lists) == 6:
+                x = 5
             current_result = bulletpoint_results[0]
             current_text = current_result["_source"]["text"]
             if bullet_pattern.match(current_text):
-                type = current_text[0]
+                current_type = current_text[0]
             elif alpha_pattern.match(current_text):
-                type = "alpha"
+                current_type = "alpha"
             elif roman_numeral_pattern.match(current_text):
-                type = "roman_numeral"
+                current_type = "roman_numeral"
+            else:
+                current_type = "numeral"
             current_y = current_result["_source"]["y"]
-            potential_bulletpoint_list = [r for r in bulletpoint_results if r["_source"]["y"] == current_y]
-            following_result = bulletpoint_results[1]
-            # while
-
-        self.caption_results = sorted(self.caption_results, key=lambda r: r["_source"]["y"])
+            current_x = current_result["_source"]["x"]
+            current_parent = current_result["_source"]["parent_element"]
+            potential_bulletpoint_list = [r for r in bulletpoint_results if abs(r["_source"]["x"] - current_x) < 3 and r["_id"] != current_result["_id"]]
+            potential_bulletpoint_index = 0
+            all_results_index = all_results.index(current_result) + 1
+            contained = True
+            bulletpoints = [current_result]
+            while potential_bulletpoint_index < len(potential_bulletpoint_list):
+                next_potential_bulletpoint = potential_bulletpoint_list[potential_bulletpoint_index]
+                next_result_text = next_potential_bulletpoint["_source"]["text"]
+                next_result_y = next_potential_bulletpoint["_source"]["y"]
+                if bullet_pattern.match(next_result_text):
+                    next_result_type = next_result_text[0]
+                elif alpha_pattern.match(next_result_text):
+                    next_result_type = "alpha"
+                elif roman_numeral_pattern.match(next_result_text):
+                    next_result_type = "roman_numeral"
+                else:
+                    next_result_type = "numeral"
+                if next_result_y > current_y + 500:
+                    break
+                if current_type != next_result_type:
+                    potential_bulletpoint_index += 1
+                    continue
+                while all_results[all_results_index] != next_potential_bulletpoint:
+                    all_result_source = all_results[all_results_index]["_source"]
+                    if all_result_source["parent_element"] == current_parent:
+                        all_results_index += 1
+                        continue
+                    if all_result_source["x"] < current_x:
+                        contained = False
+                        break
+                    if all_result_source["y"] > current_y + 300:
+                        contained = False
+                        break
+                    all_results_index += 1
+                if not contained:
+                    break
+                all_results_index += 1
+                potential_bulletpoint_index += 1
+                bulletpoints.append(next_potential_bulletpoint)
+                current_y = next_result_y
+            if len(bulletpoints) >= 2:
+                bulletpoint_list = BulletpointList(bulletpoints, all_results[all_results_index])
+                bulletpoint_lists.append(bulletpoint_list)
+            bulletpoint_results = [r for r in bulletpoint_results if r not in bulletpoints]
+        self.bulletpoint_lists = bulletpoint_lists
 
     def do_parse_pdf(self):
         pdf_parser = PdfParser(self.document)
@@ -163,11 +206,13 @@ class ExtractorDocument:
                         page_elements.append(page_element)
                 elif element_type is LTFigure or element_type is LTRect or element_type is LTCurve:
                     page_element = {"text": "", "x": element.x0, "y": base_y + page_height - element.y0,
-                                    "width": element.width, "height": element.height}
+                                    "width": element.width, "height": element.height,
+                                    "parent_element": element_group_index}
                     page_elements.append(page_element)
                 else:
                     page_element = {"text": "", "x": element.x0, "y": base_y + page_height - element.y0,
-                                    "width": element.width, "height": element.height}
+                                    "width": element.width, "height": element.height,
+                                    "parent_element": element_group_index}
                     page_elements.append(page_element)
                 element_group_index += 1
             base_y += page_height
@@ -206,7 +251,7 @@ class ExtractorDocument:
         self.extract_eligibility_requirements()
 
     def extract_important_dates(self):
-        deadline_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        deadline_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"bool": {"should": [
                 {"match": {"text": "deadline"}},
                 {"match_phrase": {"text": "closing date"}}
@@ -215,27 +260,27 @@ class ExtractorDocument:
             {"match_phrase": {"text": {"query": "deadline submission", "slop": 20}}},
             {"match_phrase_prefix": {"text": {"query": "deadline submit", "slop": 20}}}
         ]}}})
-        evaluation_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        evaluation_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"match": {"text": "evaluation"}}
         ], "should": [
             {"match": {"text": "period"}}
         ]}}})
-        signature_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        signature_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"match": {"text": "signature"}}
         ], "should": [
             {"match_phrase": {"text": {"query": "signature agreement", "slop": 20}}},
             {"match_phrase": {"text": {"query": "signature grant", "slop": 20}}}
         ]}}})
-        applicant_information_results = es.search(index=self.index_name, body={"query": {"bool": {"should": [
+        applicant_information_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"should": [
             {"match": {"text": "information"}},
             {"match": {"text": "applicant"}}
         ]}}})
-        publication_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        publication_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"match": {"text": "publication"}}
         ], "should": [
             {"match_phrase": {"text": {"query": "publication call", "slop": 20}}}
         ]}}})
-        starting_date_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        starting_date_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"match_phrase_prefix": {"text": {"query": "date start", "slop": 10}}}
         ], "should": [
             {"match": {"text": "action"}}
@@ -265,12 +310,12 @@ class ExtractorDocument:
         return
 
     def extract_budget(self):
-        total_budget_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        total_budget_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"match": {"text": "budget"}}
         ], "should": [
             {"match_phrase": {"text": {"query": "total budget", "slop": 10}}}
         ]}}})
-        grant_amount_results = es.search(index=self.index_name, body={"query": {"bool": {"should": [
+        grant_amount_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"should": [
             {"match": {"text": "grant"}},
             {"match": {"text": "budget"}},
             {"match": {"text": "between"}}
@@ -288,7 +333,7 @@ class ExtractorDocument:
         return
 
     def extract_duration(self):
-        duration_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        duration_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"match": {"text": "duration"}}
         ], "should": [
             {"match_phrase": {"text": {"query": "project duration", "slop": 10}}}
@@ -303,7 +348,7 @@ class ExtractorDocument:
         return
 
     def extract_funded_proposal_amount(self):
-        funded_proposal_amount_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        funded_proposal_amount_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"prefix": {"text": "fund"}}
         ], "should": [
             {"match_phrase_prefix": {"text": {"query": "approximately fund", "slop": 10}}},
@@ -322,14 +367,14 @@ class ExtractorDocument:
         return
 
     def extract_communication_channels(self):
-        technical_contact_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        technical_contact_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"match": {"text": "technical"}},
             {"match": {"text": "contact"}}
         ], "should": [
             {"match_phrase": {"text": {"query": "technical problem", "slop": 10}}},
             {"match_phrase": {"text": {"query": "technical questions", "slop": 10}}}
         ]}}})
-        general_contact_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        general_contact_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"bool": {"should": [
                 {"match": {"text": "contact"}},
                 {"match": {"text": "enquiries"}},
@@ -356,7 +401,7 @@ class ExtractorDocument:
         return
 
     def extract_types_of_actions(self):
-        types_of_actions_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        types_of_actions_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"bool": {"should": [
                 {"match_phrase": {"text": {"query": "type action", "slop": 10}}},
                 {"match_phrase": {"text": {"query": "types action", "slop": 10}}},
@@ -377,14 +422,14 @@ class ExtractorDocument:
             {"match_phrase": {"text": "activities aimed to"}}
         ]}}})
 
-        potential_types_of_actions = self.get_result_bulletpoints(types_of_actions_results, 500)
+        potential_types_of_actions = self.get_result_bulletpoint_lists(types_of_actions_results, 300)
 
         potential_types_of_actions.sort(key=lambda r: r.rating, reverse=True)
 
-        self.requirements.append(RequirementResults("Types of Actions", potential_types_of_actions, 1))
+        self.requirements.append(RequirementResults("Types of Actions", potential_types_of_actions, 2))
 
     def extract_admissibility_requirements(self):
-        admissibility_requirements_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        admissibility_requirements_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"bool": {"should": [
                 {"match_phrase": {"text": {"query": "admissibility requirements", "slop": 3}}}
             ]}}
@@ -398,7 +443,7 @@ class ExtractorDocument:
         self.requirements.append(RequirementResults("Admissibility Requirements", potential_admissibility_requirements, 1))
 
     def extract_eligibility_requirements(self):
-        eligibility_requirements_results = es.search(index=self.index_name, body={"query": {"bool": {"must": [
+        eligibility_requirements_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must": [
             {"bool": {"should": [
                 {"match_phrase": {"text": "eligibility requirements"}},
                 {"match_phrase": {"text": "eligibility criteria"}}
@@ -418,7 +463,7 @@ class ExtractorDocument:
         result_matches = []
         for result in search_results["hits"]["hits"]:
             for match in match_positions:
-                result_match_difference = get_result_match_distance(result, match, self.index_name)
+                result_match_difference = self.get_result_match_distance(result, match)
                 if result_match_difference <= maximum_distance:
                     match_string = self.plain_content[match[0]:match[1]].replace("\r", " ").replace("\n", " ")
                     match_string = re.sub("[\s\r\n]+", " ", match_string)
@@ -465,8 +510,76 @@ class ExtractorDocument:
             result_sections.append(RankedResult(value, get_result_section_weighting(result["_score"], distance)))
         return result_sections
 
-    def get_result_bulletpoints(self, search_results, maximum_distance):
-        return []
+    def get_result_bulletpoint_lists(self, search_results, maximum_distance: float):
+        if not self.bulletpoint_lists:
+            return []
+        result_bulletpoint_lists = []
+        for result in search_results["hits"]["hits"]:
+            for bulletpoint_list in self.bulletpoint_lists:
+                result_bulletpoint_list_difference = self.get_result_bulletpoint_list_distance(result, bulletpoint_list)
+                if result_bulletpoint_list_difference <= maximum_distance:
+                    rating = get_result_bulletpoint_list_weighting(result["_score"], result_bulletpoint_list_difference)
+                    for bulletpoint_index in range(0, len(bulletpoint_list.bulletpoints) - 1):
+                        start_index = bulletpoint_list.bulletpoints[bulletpoint_index]["_source"]["text_start_index"]
+                        end_index = bulletpoint_list.bulletpoints[bulletpoint_index + 1]["_source"]["text_start_index"] - 1
+                        bulletpoint_string = self.plain_content[start_index:end_index]
+                        bulletpoint_string = re.sub("(\r?\n)+", "\n", bulletpoint_string)
+                        result_bulletpoint_lists.append(RankedResult(bulletpoint_string, rating))
+                    start_index = bulletpoint_list.bulletpoints[-1]["_source"]["text_start_index"]
+                    end_index = bulletpoint_list.element_after["_source"]["text_start_index"] - 1
+                    bulletpoint_string = self.plain_content[start_index:end_index]
+                    bulletpoint_string = re.sub("(\r?\n)+", "\n", bulletpoint_string)
+                    result_bulletpoint_lists.append(RankedResult(bulletpoint_string, rating))
+        return result_bulletpoint_lists
+
+    def get_result_match_distance(self, result, match) -> float:
+        match_start = match[0]
+        match_end = match[1]
+        match_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must_not": [
+            {"range":
+                {"text_end_index":
+                    {
+                        "lt": match_start
+                    }
+                }
+            },
+            {"range":
+                {"text_start_index":
+                    {
+                        "gt": match_end
+                    }
+                }
+            }
+        ]}}})
+
+        distance = min(get_distance(result, e) for e in match_results["hits"]["hits"])
+        if distance == 0:
+            distance = 0.1
+        return distance
+
+    def get_result_bulletpoint_list_distance(self, result, bulletpoint_list: BulletpointList) -> float:
+        first_element = bulletpoint_list.bulletpoints[0]
+        element_after = bulletpoint_list.element_after
+        bulletpoint_list_results = es.search(index=self.index_name, body={"size": 10000, "query": {"bool": {"must_not": [
+            {"range":
+                {"text_end_index":
+                    {
+                        "lt": first_element["_source"]["text_start_index"]
+                    }
+                }
+            },
+            {"range":
+                {"text_start_index":
+                    {
+                        "gte": element_after["_source"]["text_start_index"]
+                    }
+                }
+            }
+        ]}}})["hits"]["hits"]
+        distance = min(get_distance(result, e) for e in bulletpoint_list_results)
+        if distance == 0:
+            distance = 0.5
+        return distance
 
     def print_requirements(self):
         for requirement in self.requirements:
@@ -592,59 +705,7 @@ def get_match_positions(regex, text, minimum_length=0, multiline=True):
     return results
 
 
-def get_result_match_distance(result, match, index_name) -> float:
-    match_start = match[0]
-    match_end = match[1]
-    match_results = es.search(index=index_name, body={"query": {"bool": {"must_not": [
-        {"bool":
-            {"must":
-                [
-                    {"range":
-                        {"text_start_index":
-                            {
-                                "lte": match_start
-                            }
-                        }
-                    },
-                    {"range":
-                        {"text_end_index":
-                            {
-                                "lte": match_start
-                            }
-                        }
-                    }
-                ]
-            }
-        },
-        {"bool":
-            {"must":
-                [
-                    {"range":
-                        {"text_start_index":
-                            {
-                                "gte": match_end
-                            }
-                        }
-                    },
-                    {"range":
-                        {"text_end_index":
-                            {
-                                "gte": match_end
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-    ]}}})
-
-    distance = min(get_distance(result, e, match) for e in match_results["hits"]["hits"])
-    if distance == 0:
-        distance = 0.1
-    return distance
-
-
-def get_distance(result1, result2, match):
+def get_distance(result1, result2):
     source1 = result1["_source"]
     source2 = result2["_source"]
     x1 = source1["x"]
@@ -749,7 +810,7 @@ def get_result_section_weighting(score: float, distance: float):
     return score / distance
 
 
-def get_result_bulletpoints_weighting(score: float, distance: float):
+def get_result_bulletpoint_list_weighting(score: float, distance: float):
     return score * score / distance
 
 
@@ -788,26 +849,26 @@ class ExtractionTest:
                           "April 2016", None, "EUR 9 300 000", ["EUR 150 000", "EUR 500 000"], "24 months", None,
                           "empl-swim-support@ec.europa.eu", None, "empl-vp-social-dialogue@ec.europa.eu", None,
                           None, None, None)
-        self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC2/Call VS-2016-015 - EN.pdf",
-                          ("30 March 2017", "30/03/2017"), ["April 2017- June 2017", "June to September 2017"], "November 2017",
-                          ["July 2017", "October 2017"], "21 December 2016",
-                          "The actual starting date of the action will either be the first day following the date when the last of the two parties signs the grant agreement, or the first day of the month following the date when the last of the two parties signs or a date agreed upon between the parties.",
-                          "EUR 14.200.000", None, "between 24 and 36 months", "approximately 5 to 7 proposals",
-                          "empl-swim-support@ec.europa.eu", None, "empl-vp-2016-015@ec.europa.eu", None,
-                          None, None, None)
-        self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC3/VP 2016 018_ESC call text_final.pdf",
-                          ("17 March 2017", "17 MARCH 2017"), "March/April 2017", "April 2017", "April 2017", "December 2016", "2 May 2017",
-                          ["EUR 8.243.895", "EUR 14,243.895"], None, "24 months", "single proposal",
-                          "empl-swim-support@ec.europa.eu", None, "empl-vp-2016-018@ec.europa.eu", None,
-                          None, None, None)
-        self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC7/2016_ceftelecom_calltext_eprocurement_final_030316.pdf",
-                          "19 May 2016", "May-August 2016", "As of October 2016", None, "3 March 2016", None, "€4.5 million",
-                          None, "12 months", None, None, None, "INEA-CEF-Telecom-Calls@ec.europa.eu", None,
-                          None, None, None)
-        self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC8/2016-2_ceftelecom_calltext_edelivery_superfinal_120516_0.pdf",
-                          "15 September 2016", "September-December 2016", "As of February 2017", None, "12 May 2016", None,
-                          "€0.5 million", None, "24 months", None, None, None, "INEA-CEF-Telecom-Calls@ec.europa.eu", None,
-                          None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC2/Call VS-2016-015 - EN.pdf",
+        #                   ("30 March 2017", "30/03/2017"), ["April 2017- June 2017", "June to September 2017"], "November 2017",
+        #                   ["July 2017", "October 2017"], "21 December 2016",
+        #                   "The actual starting date of the action will either be the first day following the date when the last of the two parties signs the grant agreement, or the first day of the month following the date when the last of the two parties signs or a date agreed upon between the parties.",
+        #                   "EUR 14.200.000", None, "between 24 and 36 months", "approximately 5 to 7 proposals",
+        #                   "empl-swim-support@ec.europa.eu", None, "empl-vp-2016-015@ec.europa.eu", None,
+        #                   None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC3/VP 2016 018_ESC call text_final.pdf",
+        #                   ("17 March 2017", "17 MARCH 2017"), "March/April 2017", "April 2017", "April 2017", "December 2016", "2 May 2017",
+        #                   ["EUR 8.243.895", "EUR 14,243.895"], None, "24 months", "single proposal",
+        #                   "empl-swim-support@ec.europa.eu", None, "empl-vp-2016-018@ec.europa.eu", None,
+        #                   None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC7/2016_ceftelecom_calltext_eprocurement_final_030316.pdf",
+        #                   "19 May 2016", "May-August 2016", "As of October 2016", None, "3 March 2016", None, "€4.5 million",
+        #                   None, "12 months", None, None, None, "INEA-CEF-Telecom-Calls@ec.europa.eu", None,
+        #                   None, None, None)
+        # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC8/2016-2_ceftelecom_calltext_edelivery_superfinal_120516_0.pdf",
+        #                   "15 September 2016", "September-December 2016", "As of February 2017", None, "12 May 2016", None,
+        #                   "€0.5 million", None, "24 months", None, None, None, "INEA-CEF-Telecom-Calls@ec.europa.eu", None,
+        #                   None, None, None)
         # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC9/2016-3_ceftelecom_calltext_cybersecurity_200916_final.pdf",
         #                   None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)
         # self.add_document("C:/Users/User/Google Drive/Planspiel_WebEngineering/Research/C4P/EC10/2016-3_ceftelecom_calltext_einvoicing_200916_final.pdf",

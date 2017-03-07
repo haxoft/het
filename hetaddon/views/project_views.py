@@ -137,6 +137,7 @@ def analyze_project(request, id):
             for ranked_result in ranked_results:
                 RequirementValue.objects.create(value=ranked_result.value, rating=ranked_result.rating,
                                                 document=extractor_document.document, requirement=requirement)
+    return HttpResponse("Analysis was successful", status=200)
 
 
 def user_owns_folder(user, folder):

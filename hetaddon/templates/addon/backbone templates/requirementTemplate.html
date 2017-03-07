@@ -1,16 +1,24 @@
 <script type="text/template" id="requirement_template">
     <div class="field-group">
         <label for="<%= requirement.get('name') %>_values"><%= requirement.get("name") %></label>
-            <div name="<%= name %>_values">
-                <% requirement.get('values').each(function(value) { %>
+        <div name="<%= name %>_values">
+            <div class="col-md-8">
+                <% var isFirst = true;
+                requirement.get('values').each(function(value) { %>
                 <div class="row">
                     <div class="col-md-12">
                         <textarea class="text long-field" id="<%= requirement.get('name') %>" name="<%= requirement.get('name') %>" title="<%= requirement.get('name') %>" <% if (value.get('disabled')) { %><%= "disabled" %><% } %>><%= value.get('value') %></textarea>
                         <span class="btn btn-default btn-sm va-top" onclick="rejectValue(<%= value.get('id') %>)"><span class="glyphicon glyphicon-repeat"></span></span>
                         <span class="btn btn-default btn-sm va-top" onclick="disableValue(<%= value.get('id') %>)"><span class="glyphicon glyphicon-remove"></span></span>
+                        <% if (isFirst) {
+                            isFirst = false; %>
+                            <div class="btn btn-default btn-sm va-top" onclick="addValue(<%= requirement.get('id') %>)"><span class="glyphicon glyphicon-plus"></span></div>
+                            <div class="btn btn-default btn-sm va-top" onclick="removeValue(<%= requirement.get('id') %>)"><span class="glyphicon glyphicon-minus"></span></div>
+                        <% } %>
                     </div>
                 </div>
                 <% }); %>
+            </div>
         </div>
     </div>
 </script>

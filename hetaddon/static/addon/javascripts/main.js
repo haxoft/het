@@ -149,6 +149,44 @@ function disableValue(id) {
     });
 }
 
+function addValue(requirement_id) {
+    var data = {
+        values_shown:app.requirements.get(requirement_id).get("values_shown") + 1
+    };
+    $.ajax({
+        url: apiUrlPrefix + "requirements/" + requirement_id,
+        method: "PUT",
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccessMessage("The Requirement was updated successfully");
+            refreshRequirements();
+        },
+        error: function() {
+            showErrorMessage("The requirement could not be updated, please try again or contact our webmaster.");
+        }
+    });
+}
+
+function removeValue(requirement_id) {
+    values_shown = app.requirements.get(requirement_id).get("values_shown") - 1;
+    if (values_shown == 0) values_shown = 1;
+    var data = {
+        values_shown: values_shown
+    };
+    $.ajax({
+        url: apiUrlPrefix + "requirements/" + requirement_id,
+        method: "PUT",
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccessMessage("The Requirement was updated successfully");
+            refreshRequirements();
+        },
+        error: function() {
+            showErrorMessage("The requirement could not be updated, please try again or contact our webmaster.");
+        }
+    });
+}
+
 function runAnalysis() {
     $.ajax({
         url: apiUrlPrefix + "projects/" + currentTab.get("project_id") + "/analyze",
@@ -156,6 +194,7 @@ function runAnalysis() {
         success: function() {
             showSuccessMessage("The analysis was successful.");
             refreshRequirements();
+            refreshProjectFolders();
         },
         error: function() {
             showErrorMessage("The analysis could not be carried out, please try again or contact our webmaster.");
@@ -198,7 +237,11 @@ function refreshProjectFolders() {
 
 function refreshRequirements() {
     console.log("Synchronizing Requirements");
-    app.requirements.fetch({reset: true});
+    app.requirements.fetch({reset: true}).done(function() {
+        $("textarea").each(function(index, element) {
+            element.style.height = element.scrollHeight + "px";
+        });
+    });
 }
 
 function refreshAll(){
@@ -455,7 +498,8 @@ function initModels() {
         },
 
         defaults: {
-            name: ""
+            name: "",
+            values_shown: 1
         },
         url: apiUrlPrefix + "requirements"
     });

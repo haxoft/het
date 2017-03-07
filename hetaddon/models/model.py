@@ -94,7 +94,7 @@ class Requirement(models.Model):
 
 
 class RequirementValue(models.Model):
-    value = models.CharField(max_length=300)
+    value = models.TextField()
     disabled = models.BooleanField(default=False)
     rejected = models.BooleanField(default=False)
     rating = models.FloatField()

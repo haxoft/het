@@ -20,7 +20,8 @@ def get_requirement_json(request, id):
     requirement_dict = {"id": requirement.id, "name": requirement.name, "project_id": requirement.project.id,
                         "values": [{"id": values_list[i].id, "value": values_list[i].value,
                                     "disabled": values_list[i].disabled, "document_id": values_list[i].document_id}
-                                   for i in range(0, len(values_list))]}
+                                   for i in range(0, len(values_list))],
+                        "values_shown": requirement.values_shown}
     return JsonResponse(requirement_dict)
 
 
@@ -64,8 +65,13 @@ def put_requirement(request, id):
         requirement.name = data["name"]
     if "values_shown" in data:
         values_shown = data["values_shown"]
-        if requirement.requirementvalue_set.count() < values_shown:
-            return HttpResponseBadRequest("Invalid data")
+        requirement_values = requirement.requirementvalue_set
+        if requirement_values.count() >= values_shown:
+            requirement.values_shown = values_shown
+            while requirement_values.filter(rejected=False).count() < values_shown:
+                rejected_value = requirement_values.filter(rejected=True).order_by("-rating")[0]
+                rejected_value.rejected = False
+                rejected_value.save()
     requirement.save()
 
     return HttpResponse("Requirement was successfully updated", status=200)
@@ -107,7 +113,7 @@ def get_requirements_of_project_json(request, id):
         for j in range(0, values_shown):
             values_json_list.append({"id": unrejected_values_list[j].id, "value": unrejected_values_list[j].value,
                                      "disabled": unrejected_values_list[j].disabled, "document": unrejected_values_list[j].document_id })
-        requirements_json_list.append({"id": req.id, "name": req.name, "values": values_json_list})
+        requirements_json_list.append({"id": req.id, "name": req.name, "values": values_json_list, "values_shown": req.values_shown})
 
     return JsonResponse(requirements_json_list, safe=False)
 
