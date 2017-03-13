@@ -33,8 +33,9 @@ function uploadDocument(element, section_id) {
             var content = event.target.result;
             var size = file.size;
             var type = file.name.indexOf('.') != -1 ? file.name.split('.').pop() : "";
+            var file_name = file.name.replace("[^\\/](\\|/)", "");
             var data = {
-                name:"New Document",
+                name:file_name,
                 size:size,
                 type:type,
                 content:btoa(content),
@@ -256,7 +257,7 @@ function refreshAll(){
 }
 
 function showTab(project_id, type) {
-    var typeEnumValue = app.TabTypeEnum[type]
+    var typeEnumValue = app.TabTypeEnum[type];
     var tabData = {project_id: project_id, type: typeEnumValue};
     var tabsFound = app.openedTabs.where(tabData);
     if(tabsFound.length > 1) throw "Invalid tab collection";
@@ -291,8 +292,21 @@ function showTab(project_id, type) {
     }
 }
 
-function closeTab(project_id, type) {
-
+function closeTab(project_id, type, e) {
+    // TODO: prevent whatever default
+    e.stopPropagation();
+    var typeEnumValue = app.TabTypeEnum[type];
+    var tabData = {project_id: project_id, type: typeEnumValue};
+    var tabsFound = app.openedTabs.where(tabData);
+    if(tabsFound.length > 1) throw "Invalid tab collection";
+    console.log(tabsFound);
+    if(tabsFound.length == 1) {
+        currentTab = tabsFound[0];
+        app.openedTabs.remove(currentTab);
+        app.tabsView.render();
+    } else {
+        throw "Invalid tab collection";
+    }
 }
 
 (function() {
@@ -676,7 +690,7 @@ function initNewFolderDialog() {
             method: "POST",
             data: JSON.stringify(data),
             success: function() {
-                AJS.dialog2("#new_project_dialog").hide();
+                AJS.dialog2("#new_folder_dialog").hide();
                 showSuccessMessage("The Folder was successfully created.");
                 refreshProjectFolders();
             },

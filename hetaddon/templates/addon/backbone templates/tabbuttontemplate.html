@@ -2,7 +2,7 @@
     <li class="menu-item <% if(active) { %><%= 'active-tab' %><% } %>">
         <a href="#tab_<%= tab.get('type').value.toLowerCase() %>">
             <span onclick="showTab(<%= tab.get('project_id') %>, '<%= tab.get('type').value %>')"><%= tab.get('project_name') %> - <%= tab.get('type').toString() %></span>
-            <span class="glyphicon glyphicon-remove" onclick="closeTab(<%= tab.get('project_id') %>, '<%= tab.get('type').value %>')"></span>
+            <span class="glyphicon glyphicon-remove" onclick="closeTab(<%= tab.get('project_id') %>, '<%= tab.get('type').value %>', event)"></span>
         </a>
     </li>
 </script>
