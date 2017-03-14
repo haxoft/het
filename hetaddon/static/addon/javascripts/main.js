@@ -333,11 +333,11 @@ function closeTab(project_id, type, e) {
         loadConnectScript();
         setUserKey(function () {
             refreshAll();
-            setInterval(refreshAll,30000);
+            //setInterval(refreshAll,30000);
         });
     }else{
         refreshAll();
-        setInterval(refreshAll,30000);
+        //setInterval(refreshAll,30000);
     }
 
 })();
