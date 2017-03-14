@@ -12,7 +12,7 @@ from .section_views import *
 
 #  nasty, remove
 mocked = False
-inside_atlassian = False
+inside_atlassian = True
 
 log = logging.getLogger('django')
 

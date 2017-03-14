@@ -26,6 +26,10 @@
   margin-right: 5px !important;
 }
 
+.ml-5 {
+  margin-left: 3px !important;
+}
+
 .pl-7 {
   padding-left: 7px !important;
 }
@@ -64,6 +68,10 @@
 
 .va-top {
   vertical-align: top !important;
+}
+
+.c-gray {
+  color: #707070 !important;
 }
 
 .cursor-pointer {
